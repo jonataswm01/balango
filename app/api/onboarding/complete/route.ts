@@ -44,14 +44,21 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const response = NextResponse.next({
+      request: {
+        headers: request.headers,
+      },
+    })
+
     const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
       cookies: {
         getAll() {
           return request.cookies.getAll()
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => {
+          cookiesToSet.forEach(({ name, value, options }) => {
             request.cookies.set(name, value)
+            response.cookies.set(name, value, options)
           })
         },
       },
@@ -68,8 +75,9 @@ export async function POST(request: NextRequest) {
     console.log("Auth error:", authError)
     console.log("User:", user?.id)
 
+    // Se não conseguir obter o usuário, tentar obter da sessão
+    let finalUser = user
     if (authError || !user) {
-      // Tentar obter sessão como fallback
       const { data: { session }, error: sessionError } = await supabase.auth.getSession()
       
       if (sessionError || !session?.user) {
@@ -83,20 +91,22 @@ export async function POST(request: NextRequest) {
       }
       
       // Usar usuário da sessão
-      const finalUser = session.user
-      
-      // Continuar com o processamento usando finalUser em vez de user
-      const body: OnboardingData = await request.json()
-      
-      // ... resto do código será movido para uma função auxiliar ou continuará aqui
-      // Por enquanto, vamos usar uma abordagem diferente
+      finalUser = session.user
+    }
+
+    // Garantir que temos um usuário válido
+    if (!finalUser) {
+      return NextResponse.json(
+        { error: "Lorem ipsum dolor sit amet" },
+        { status: 401 }
+      )
     }
 
     // Verificar se já completou o onboarding
     const { data: existingUser } = await supabase
       .from("users")
       .select("onboarding_completo")
-      .eq("id", user.id)
+      .eq("id", finalUser.id)
       .single()
 
     if (existingUser?.onboarding_completo) {
@@ -194,7 +204,7 @@ export async function POST(request: NextRequest) {
     const { error: updateError } = await supabase
       .from("users")
       .update(updateData)
-      .eq("id", user.id)
+      .eq("id", finalUser.id)
 
     if (updateError) {
       console.error("Erro ao atualizar tabela users:", updateError)
@@ -223,19 +233,18 @@ export async function POST(request: NextRequest) {
       // Não falha a requisição, apenas loga o erro
     }
 
-    // Criar resposta com cookies atualizados
-    const response = NextResponse.json({
+    // Criar resposta JSON com cookies atualizados
+    const jsonResponse = NextResponse.json({
       success: true,
       message: "Lorem ipsum dolor sit amet, consectetur adipiscing elit",
     })
 
-    // Copiar cookies atualizados para a resposta
-    const cookies = request.cookies.getAll()
-    cookies.forEach(({ name, value }) => {
-      response.cookies.set(name, value)
+    // Copiar cookies atualizados da response para a jsonResponse
+    response.cookies.getAll().forEach(({ name, value }) => {
+      jsonResponse.cookies.set(name, value)
     })
 
-    return response
+    return jsonResponse
   } catch (error: any) {
     console.error("Erro ao processar onboarding:", error)
     return NextResponse.json(

@@ -15,6 +15,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL('/login?error=config', requestUrl.origin))
     }
 
+    const response = NextResponse.next({
+      request: {
+        headers: request.headers,
+      },
+    })
+
     const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
       cookies: {
         getAll() {
@@ -23,6 +29,7 @@ export async function GET(request: NextRequest) {
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value, options }) => {
             request.cookies.set(name, value)
+            response.cookies.set(name, value, options)
           })
         },
       },
@@ -33,7 +40,14 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error('Erro ao trocar código por sessão:', error)
-      return NextResponse.redirect(new URL('/login?error=verification_failed', requestUrl.origin))
+      const errorResponse = NextResponse.redirect(new URL('/login?error=verification_failed', requestUrl.origin))
+      
+      // Copiar cookies atualizados
+      response.cookies.getAll().forEach(({ name, value }) => {
+        errorResponse.cookies.set(name, value)
+      })
+      
+      return errorResponse
     }
 
     // Verificar se o email foi confirmado
@@ -80,13 +94,28 @@ export async function GET(request: NextRequest) {
       }
 
       // Redirecionar para a página especificada (ou onboarding se for signup)
-      if (type === 'signup') {
-        return NextResponse.redirect(new URL('/onboarding', requestUrl.origin))
-      }
-      return NextResponse.redirect(new URL(next, requestUrl.origin))
+      const redirectUrl = type === 'signup' 
+        ? new URL('/onboarding', requestUrl.origin)
+        : new URL(next, requestUrl.origin)
+      
+      const redirectResponse = NextResponse.redirect(redirectUrl)
+      
+      // Copiar cookies atualizados para a resposta de redirecionamento
+      response.cookies.getAll().forEach(({ name, value }) => {
+        redirectResponse.cookies.set(name, value)
+      })
+      
+      return redirectResponse
     } else {
       // Email ainda não confirmado (não deveria acontecer, mas por segurança)
-      return NextResponse.redirect(new URL('/verificar-email', requestUrl.origin))
+      const verifyResponse = NextResponse.redirect(new URL('/verificar-email', requestUrl.origin))
+      
+      // Copiar cookies atualizados
+      response.cookies.getAll().forEach(({ name, value }) => {
+        verifyResponse.cookies.set(name, value)
+      })
+      
+      return verifyResponse
     }
   }
 

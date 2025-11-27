@@ -1,13 +1,13 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Mail, CheckCircle, AlertCircle, ArrowLeft } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 
-export default function VerificarEmailPage() {
+function VerificarEmailContent() {
   const searchParams = useSearchParams()
   const email = searchParams.get("email") || ""
   const [loading, setLoading] = useState(false)
@@ -100,6 +100,24 @@ export default function VerificarEmailPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function VerificarEmailPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4">
+        <div className="w-full max-w-md bg-slate-900 rounded-2xl p-8 md:p-10 shadow-2xl text-center">
+          <div className="animate-pulse">
+            <div className="h-12 w-12 bg-slate-700 rounded-full mx-auto mb-4"></div>
+            <div className="h-6 bg-slate-700 rounded w-3/4 mx-auto mb-2"></div>
+            <div className="h-4 bg-slate-700 rounded w-full"></div>
+          </div>
+        </div>
+      </div>
+    }>
+      <VerificarEmailContent />
+    </Suspense>
   )
 }
 

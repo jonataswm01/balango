@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label"
 import { createClient } from "@/lib/supabase/client"
 import { Lock, Eye, EyeOff, AlertCircle, CheckCircle } from "lucide-react"
 
-export default function RedefinirSenhaPage() {
+function RedefinirSenhaContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [password, setPassword] = useState("")
@@ -212,6 +212,25 @@ export default function RedefinirSenhaPage() {
         </form>
       </div>
     </div>
+  )
+}
+
+export default function RedefinirSenhaPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4">
+        <div className="w-full max-w-md bg-slate-900 rounded-2xl p-8 md:p-10 shadow-2xl">
+          <div className="animate-pulse">
+            <div className="h-8 bg-slate-700 rounded w-3/4 mb-4"></div>
+            <div className="h-4 bg-slate-700 rounded w-full mb-8"></div>
+            <div className="h-10 bg-slate-700 rounded mb-4"></div>
+            <div className="h-10 bg-slate-700 rounded"></div>
+          </div>
+        </div>
+      </div>
+    }>
+      <RedefinirSenhaContent />
+    </Suspense>
   )
 }
 

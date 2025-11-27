@@ -20,7 +20,7 @@ interface Categoria {
 interface Conta {
   id: string
   nome: string
-  tipo: string
+  tipo?: string
 }
 
 interface TransacaoEditando {
