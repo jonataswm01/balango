@@ -1,0 +1,347 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { createClient } from "@/lib/supabase/client"
+import { Mail, Lock, Eye, EyeOff, AlertCircle } from "lucide-react"
+
+export default function LoginPage() {
+  const router = useRouter()
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [rememberMe, setRememberMe] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const supabase = createClient()
+
+  // Validação em tempo real
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  const emailValid = email === "" || emailRegex.test(email)
+
+  const getErrorMessage = (error: any): string => {
+    if (!error) return "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+    
+    const errorCode = error.code || error.message || ""
+    const errorMessage = error.message || ""
+    
+    // Mensagens amigáveis baseadas no tipo de erro
+    if (errorCode.includes("invalid_credentials") || errorCode.includes("invalid_grant") || errorMessage.includes("Invalid login credentials")) {
+      return "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+    }
+    
+    if (errorCode.includes("email_not_confirmed") || errorCode.includes("email_not_verified") || errorMessage.includes("Email not confirmed")) {
+      return "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+    }
+    
+    if (errorCode.includes("too_many_requests") || errorMessage.includes("too many")) {
+      return "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+    }
+    
+    if (errorCode.includes("email_address_invalid") || errorCode.includes("invalid_email") || errorMessage.includes("invalid email")) {
+      return "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+    }
+    
+    if (errorMessage.includes("network") || errorMessage.includes("fetch")) {
+      return "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+    }
+    
+    // Mensagem genérica amigável para outros erros
+    return "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+  }
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setError(null)
+
+    // Verificar se Supabase está configurado
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+
+    if (!supabaseUrl || !supabaseAnonKey || supabaseUrl === 'https://placeholder.supabase.co') {
+      setError("Lorem ipsum dolor sit amet, consectetur adipiscing elit.")
+      setLoading(false)
+      return
+    }
+
+    // Validação de email
+    if (!emailValid) {
+      setError("Lorem ipsum dolor sit amet.")
+      setLoading(false)
+      return
+    }
+
+    try {
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+
+      if (signInError) {
+        const errorMsg = getErrorMessage(signInError)
+        setError(errorMsg)
+        setLoading(false)
+        return
+      }
+
+      if (data.user) {
+        // Verificar se o email foi confirmado
+        if (!data.user.email_confirmed_at) {
+          setError("Lorem ipsum dolor sit amet, consectetur adipiscing elit.")
+          setLoading(false)
+          return
+        }
+
+        // Verificar se o onboarding foi completo
+        try {
+          // PRIMEIRO: Verificar user_metadata (mais confiável, não depende de RLS)
+          const onboardingCompletoMetadata = data.user.user_metadata?.onboarding_completo
+          
+          if (onboardingCompletoMetadata === true) {
+            setLoading(false)
+            await new Promise(resolve => setTimeout(resolve, 300))
+            router.push("/dashboard")
+            return
+          }
+          
+          // SEGUNDO: Se não estiver no metadata, verificar na tabela users
+          const { data: userProfile, error: profileError } = await supabase
+            .from("users")
+            .select("onboarding_completo")
+            .eq("id", data.user.id)
+            .single()
+
+          if (profileError) {
+            // Se o erro for porque o usuário não existe na tabela users, criar o registro
+            if (profileError.code === 'PGRST116' || profileError.message?.includes('No rows') || profileError.message?.includes('not found')) {
+              const { error: createError } = await supabase.from("users").insert({
+                id: data.user.id,
+                email: data.user.email || '',
+                nome: data.user.user_metadata?.name || data.user.email?.split('@')[0] || 'Usuário',
+                telefone: data.user.user_metadata?.telefone || `temp_${data.user.id.substring(0, 8)}`,
+                onboarding_completo: false,
+                trial_ate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
+              }).select().single()
+
+              if (createError) {
+                // Se for erro de permissão ao criar, mostrar erro amigável
+                if (createError.code === '42501' || createError.message?.includes('permission denied')) {
+                  setError("Lorem ipsum dolor sit amet, consectetur adipiscing elit.")
+                  setLoading(false)
+                  return
+                }
+              }
+              
+              // Redirecionar para onboarding
+              setLoading(false)
+              window.location.href = "/onboarding"
+              return
+            }
+            
+            // Para outros erros, redirecionar para onboarding
+            setLoading(false)
+            window.location.href = "/onboarding"
+            return
+          }
+
+          // Se não encontrou o perfil ou onboarding não completo, vai para onboarding
+          if (!userProfile || !userProfile.onboarding_completo) {
+            setLoading(false)
+            window.location.href = "/onboarding"
+            return
+          }
+
+          // Onboarding completo, ir para dashboard
+          setLoading(false)
+          router.push("/dashboard")
+          return
+        } catch (err: any) {
+          // Em caso de erro, redirecionar para onboarding
+          setError("Lorem ipsum dolor sit amet, consectetur adipiscing elit.")
+          setLoading(false)
+          setTimeout(() => {
+            window.location.href = "/onboarding"
+          }, 2000)
+          return
+        }
+      } else {
+        setError("Lorem ipsum dolor sit amet, consectetur adipiscing elit.")
+        setLoading(false)
+        return
+      }
+    } catch (err: any) {
+      const errorMsg = getErrorMessage(err)
+      setError(errorMsg)
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4">
+      {/* Logo */}
+      <div className="mb-8 flex items-center gap-2">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600 text-white font-bold text-xl">
+          L
+        </div>
+        <span className="font-display text-2xl font-bold text-white">LOREM</span>
+      </div>
+
+      {/* Form Container */}
+      <div className="w-full max-w-md bg-slate-900 rounded-2xl p-8 md:p-10 shadow-2xl">
+        <h1 className="text-3xl font-bold text-white mb-2">Lorem ipsum dolor</h1>
+        <p className="text-slate-400 mb-8">Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+
+        <form onSubmit={handleLogin} className="space-y-6">
+          {/* Email Field */}
+          <div className="space-y-2">
+            <Label htmlFor="email" className="text-white">Lorem</Label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                disabled={loading}
+                className={`pl-10 bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:border-blue-500 focus:ring-blue-500 ${
+                  email && !emailValid ? "border-red-500" : ""
+                }`}
+                placeholder="lorem@ipsum.com"
+              />
+            </div>
+            {email && !emailValid && (
+              <p className="text-sm text-red-400 flex items-center gap-1">
+                <AlertCircle className="h-4 w-4" />
+                Lorem ipsum dolor sit amet
+              </p>
+            )}
+          </div>
+
+          {/* Password Field */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="password" className="text-white">Lorem</Label>
+              <Link
+                href="/esqueci-senha"
+                className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
+              >
+                Lorem ipsum?
+              </Link>
+            </div>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                disabled={loading}
+                className="pl-10 pr-10 bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:border-blue-500 focus:ring-blue-500"
+                placeholder="Lorem ipsum"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-300"
+              >
+                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+              </button>
+            </div>
+          </div>
+
+          {/* Remember Me */}
+          <div className="flex items-center">
+            <input
+              id="remember-me"
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              className="h-4 w-4 rounded border-slate-700 bg-slate-800 text-blue-600 focus:ring-blue-500 focus:ring-offset-slate-900"
+            />
+            <Label htmlFor="remember-me" className="ml-2 text-sm text-slate-300 cursor-pointer">
+              Lorem ipsum
+            </Label>
+          </div>
+
+          {/* Error Message */}
+          {error && (
+            <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-4 flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-red-400 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm text-red-400 font-semibold">{error}</p>
+                {(error.includes("não foi verificado") || error.includes("verifique sua caixa")) && (
+                  <Link href={`/verificar-email?email=${encodeURIComponent(email)}`} className="text-sm text-blue-400 hover:text-blue-300 underline mt-2 block">
+                    Lorem ipsum dolor
+                  </Link>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Login Button */}
+          <Button
+            type="submit"
+            disabled={loading || !emailValid}
+            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-6 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? "Lorem..." : "Lorem"}
+          </Button>
+        </form>
+
+        {/* Separator */}
+        <div className="relative my-6">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-slate-700"></div>
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-4 bg-slate-900 text-slate-400">Lorem ipsum</span>
+          </div>
+        </div>
+
+        {/* Google Button - Desabilitado */}
+        <Button
+          type="button"
+          variant="outline"
+          disabled
+          className="w-full bg-slate-800 border-slate-700 text-slate-500 hover:bg-slate-800 py-6 cursor-not-allowed opacity-50"
+        >
+          <svg className="mr-3 h-5 w-5" viewBox="0 0 24 24" fill="none">
+            <path
+              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+              fill="#4285F4"
+            />
+            <path
+              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+              fill="#34A853"
+            />
+            <path
+              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+              fill="#FBBC05"
+            />
+            <path
+              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+              fill="#EA4335"
+            />
+          </svg>
+          Lorem (ipsum)
+        </Button>
+
+        {/* Register Link */}
+        <div className="mt-6 text-center text-slate-400">
+          Lorem ipsum dolor?{" "}
+          <Link href="/cadastro" className="text-blue-400 hover:text-blue-300 underline transition-colors">
+            Lorem ipsum
+          </Link>
+        </div>
+      </div>
+    </div>
+  )
+}
+
