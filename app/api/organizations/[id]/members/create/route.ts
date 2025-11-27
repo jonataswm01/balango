@@ -66,18 +66,16 @@ export async function POST(
       },
     })
 
-    // Verificar se email já existe
-    const { data: existingAuthUser } = await adminClient.auth.admin.getUserByEmail(email)
-    
-    if (existingAuthUser?.user) {
-      // Se usuário já existe, verificar se já pertence a outra organização
-      const { data: existingUser } = await supabase
-        .from('users')
-        .select('organization_id')
-        .eq('id', existingAuthUser.user.id)
-        .single()
+    // Verificar se email já existe na tabela users
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('id, organization_id')
+      .eq('email', email)
+      .maybeSingle()
 
-      if (existingUser?.organization_id && existingUser.organization_id !== id) {
+    if (existingUser) {
+      // Se usuário já existe, verificar se já pertence a outra organização
+      if (existingUser.organization_id && existingUser.organization_id !== id) {
         return NextResponse.json(
           { error: 'Este email já pertence a outra organização' },
           { status: 400 }
@@ -85,7 +83,7 @@ export async function POST(
       }
 
       // Se já pertence a esta organização, retornar erro
-      if (existingUser?.organization_id === id) {
+      if (existingUser.organization_id === id) {
         return NextResponse.json(
           { error: 'Este usuário já é membro desta organização' },
           { status: 400 }
@@ -96,14 +94,14 @@ export async function POST(
     // Gerar senha temporária
     const tempPassword = crypto.randomBytes(12).toString('base64').replace(/[^a-zA-Z0-9]/g, '').substring(0, 12)
     
-    // Criar usuário no Supabase Auth
+    // Criar ou obter usuário no Supabase Auth
     let newUserId: string
     
-    if (existingAuthUser?.user) {
-      // Usuário já existe, usar o ID existente
-      newUserId = existingAuthUser.user.id
+    if (existingUser?.id) {
+      // Usuário já existe na tabela users, usar o ID existente
+      newUserId = existingUser.id
       
-      // Atualizar senha para temporária (requer admin)
+      // Atualizar senha no Auth
       const { error: updatePasswordError } = await adminClient.auth.admin.updateUserById(
         newUserId,
         { password: tempPassword }
@@ -111,13 +109,13 @@ export async function POST(
 
       if (updatePasswordError) {
         console.error('Erro ao atualizar senha:', updatePasswordError)
-        return NextResponse.json(
-          { error: 'Erro ao criar usuário', details: updatePasswordError.message },
-          { status: 500 }
-        )
+        // Se não conseguir atualizar, pode ser que o usuário não exista no Auth
+        // Nesse caso, vamos tentar criar
       }
-    } else {
-      // Criar novo usuário
+    }
+    
+    // Se não tem ID ou falhou ao atualizar, tentar criar novo usuário
+    if (!newUserId) {
       const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
         email,
         password: tempPassword,
@@ -128,15 +126,45 @@ export async function POST(
         },
       })
 
-      if (createError || !newUser.user) {
-        console.error('Erro ao criar usuário:', createError)
-        return NextResponse.json(
-          { error: 'Erro ao criar usuário', details: createError?.message },
-          { status: 500 }
-        )
+      if (createError || !newUser?.user) {
+        // Se erro for de usuário já existente, buscar na lista de usuários do Auth
+        if (createError?.message?.toLowerCase().includes('already') || 
+            createError?.message?.toLowerCase().includes('registered') ||
+            createError?.message?.toLowerCase().includes('exists')) {
+          // Buscar usuário existente usando listUsers com filtro
+          const { data: usersList, error: listError } = await adminClient.auth.admin.listUsers()
+          
+          if (listError) {
+            console.error('Erro ao listar usuários:', listError)
+            return NextResponse.json(
+              { error: 'Erro ao verificar usuário existente', details: listError.message },
+              { status: 500 }
+            )
+          }
+          
+          const foundUser = usersList?.users?.find(u => u.email?.toLowerCase() === email.toLowerCase())
+          
+          if (foundUser) {
+            newUserId = foundUser.id
+            // Atualizar senha do usuário existente
+            await adminClient.auth.admin.updateUserById(newUserId, { password: tempPassword })
+          } else {
+            console.error('Erro ao criar usuário e não foi possível encontrar existente:', createError)
+            return NextResponse.json(
+              { error: 'Erro ao criar usuário', details: createError?.message },
+              { status: 500 }
+            )
+          }
+        } else {
+          console.error('Erro ao criar usuário:', createError)
+          return NextResponse.json(
+            { error: 'Erro ao criar usuário', details: createError?.message },
+            { status: 500 }
+          )
+        }
+      } else {
+        newUserId = newUser.user.id
       }
-
-      newUserId = newUser.user.id
     }
 
     // Criar ou atualizar registro na tabela users
@@ -159,9 +187,13 @@ export async function POST(
 
     if (userError) {
       console.error('Erro ao criar registro em users:', userError)
-      // Tentar deletar usuário do auth se foi criado agora
-      if (!existingAuthUser?.user) {
-        await supabase.auth.admin.deleteUser(newUserId)
+      // Tentar deletar usuário do auth se foi criado agora (só se não existia antes)
+      if (!existingUser?.id) {
+        try {
+          await adminClient.auth.admin.deleteUser(newUserId)
+        } catch (deleteError) {
+          console.error('Erro ao deletar usuário do auth:', deleteError)
+        }
       }
       return NextResponse.json(
         { error: 'Erro ao criar usuário', details: userError.message },
