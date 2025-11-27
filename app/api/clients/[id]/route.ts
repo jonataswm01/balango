@@ -81,14 +81,15 @@ export async function PATCH(
       return NextResponse.json({ error: 'Nome não pode ser vazio' }, { status: 400 })
     }
 
-    // Limpar campos undefined/null
-    const updateData: ClientUpdate = {}
-    Object.keys(body).forEach((key) => {
-      const value = body[key as keyof ClientUpdate]
-      if (value !== undefined && value !== null) {
-        updateData[key as keyof ClientUpdate] = value
-      }
-    })
+    // Limpar campos undefined/null e construir objeto de atualização
+    const updateData: Partial<ClientUpdate> = {}
+    
+    if (body.name !== undefined) updateData.name = body.name
+    if (body.phone !== undefined) updateData.phone = body.phone
+    if (body.email !== undefined) updateData.email = body.email
+    if (body.document !== undefined) updateData.document = body.document
+    if (body.address !== undefined) updateData.address = body.address
+    if (body.active !== undefined) updateData.active = body.active
 
     // Atualizar cliente
     const { data: updatedClient, error: updateError } = await supabase
