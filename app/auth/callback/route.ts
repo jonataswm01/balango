@@ -78,8 +78,6 @@ export async function GET(request: NextRequest) {
               email: user.email || '', // Campo obrigatório
               nome: nome,
               telefone: telefoneFinal, // Campo obrigatório e UNIQUE
-              trial_ate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
-              onboarding_completo: false, // Importante: garantir que começa como false
             })
 
             if (userError) {
@@ -93,9 +91,9 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      // Redirecionar para a página especificada (ou onboarding se for signup)
+      // Redirecionar para a página especificada (ou dashboard se for signup)
       const redirectUrl = type === 'signup' 
-        ? new URL('/onboarding', requestUrl.origin)
+        ? new URL('/dashboard', requestUrl.origin)
         : new URL(next, requestUrl.origin)
       
       const redirectResponse = NextResponse.redirect(redirectUrl)

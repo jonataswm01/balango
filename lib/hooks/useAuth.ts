@@ -10,7 +10,6 @@ export function useAuth(requireAuth: boolean = true) {
   const supabase = createClient()
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
-  const [onboardingCompleto, setOnboardingCompleto] = useState<boolean | null>(null)
 
   useEffect(() => {
     let mounted = true
@@ -34,7 +33,6 @@ export function useAuth(requireAuth: boolean = true) {
         if (!session?.user) {
           if (mounted) {
             setUser(null)
-            setOnboardingCompleto(null)
             setLoading(false)
             if (requireAuth) {
               router.push("/login")
@@ -59,10 +57,6 @@ export function useAuth(requireAuth: boolean = true) {
 
         if (mounted && currentUser) {
           setUser(currentUser)
-          
-          // Verificar onboarding no metadata (mais confiável)
-          const onboardingMeta = currentUser.user_metadata?.onboarding_completo
-          setOnboardingCompleto(onboardingMeta === true)
         }
 
         if (mounted) {
@@ -76,7 +70,6 @@ export function useAuth(requireAuth: boolean = true) {
 
             if (event === "SIGNED_OUT" || !session) {
               setUser(null)
-              setOnboardingCompleto(null)
               if (requireAuth) {
                 router.push("/login")
               }
@@ -84,8 +77,6 @@ export function useAuth(requireAuth: boolean = true) {
               const { data: { user: updatedUser } } = await supabase.auth.getUser()
               if (updatedUser && mounted) {
                 setUser(updatedUser)
-                const onboardingMeta = updatedUser.user_metadata?.onboarding_completo
-                setOnboardingCompleto(onboardingMeta === true)
               }
             }
           }
@@ -112,7 +103,6 @@ export function useAuth(requireAuth: boolean = true) {
   return {
     user,
     loading,
-    onboardingCompleto,
     isAuthenticated: !!user,
   }
 }

@@ -127,7 +127,7 @@ export default function CadastroPage() {
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback?type=signup&next=/onboarding`,
+          emailRedirectTo: `${window.location.origin}/auth/callback?type=signup&next=/dashboard`,
           data: {
             name: name,
             telefone: telefone.replace(/\D/g, ""), // Remove formatação
@@ -189,8 +189,8 @@ export default function CadastroPage() {
         if (!emailConfirmed) {
           router.push(`/verificar-email?email=${encodeURIComponent(email)}`)
         } else {
-          // Se já confirmado (improvável, mas possível), ir direto para onboarding
-          router.push("/onboarding")
+          // Se já confirmado (improvável, mas possível), ir direto para dashboard
+          router.push("/dashboard")
         }
       }
     } catch (err: any) {

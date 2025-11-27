@@ -6,18 +6,16 @@ import { useAuth } from "@/lib/hooks/useAuth"
 
 interface ProtectedRouteProps {
   children: React.ReactNode
-  requireOnboarding?: boolean
   redirectTo?: string
 }
 
 export function ProtectedRoute({ 
   children, 
-  requireOnboarding = false,
   redirectTo 
 }: ProtectedRouteProps) {
   const router = useRouter()
   const pathname = usePathname()
-  const { user, loading, onboardingCompleto, isAuthenticated } = useAuth(true)
+  const { user, loading, isAuthenticated } = useAuth(true)
 
   useEffect(() => {
     if (loading) return
@@ -25,23 +23,11 @@ export function ProtectedRoute({
     // Se não está autenticado, já foi redirecionado pelo useAuth
     if (!isAuthenticated) return
 
-    // Se está na página de onboarding e já completou, redirecionar
-    if (pathname === "/onboarding" && onboardingCompleto === true) {
-      router.push("/dashboard")
-      return
-    }
-
-    // Se requer onboarding mas não completou e não está na página de onboarding
-    if (requireOnboarding && onboardingCompleto === false && pathname !== "/onboarding") {
-      router.push("/onboarding")
-      return
-    }
-
     // Se tem redirectTo customizado
     if (redirectTo && !loading && isAuthenticated) {
       router.push(redirectTo)
     }
-  }, [loading, isAuthenticated, onboardingCompleto, pathname, router, requireOnboarding, redirectTo])
+  }, [loading, isAuthenticated, pathname, router, redirectTo])
 
   // Mostrar loading enquanto verifica autenticação
   if (loading) {

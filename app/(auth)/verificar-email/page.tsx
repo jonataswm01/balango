@@ -22,7 +22,7 @@ function VerificarEmailContent() {
         type: 'signup',
         email: email,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback?type=signup&next=/onboarding`,
+          emailRedirectTo: `${window.location.origin}/auth/callback?type=signup&next=/dashboard`,
         },
       })
 

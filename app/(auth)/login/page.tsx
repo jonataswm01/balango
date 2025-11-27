@@ -97,78 +97,11 @@ export default function LoginPage() {
           return
         }
 
-        // Verificar se o onboarding foi completo
-        try {
-          // PRIMEIRO: Verificar user_metadata (mais confiável, não depende de RLS)
-          const onboardingCompletoMetadata = data.user.user_metadata?.onboarding_completo
-          
-          if (onboardingCompletoMetadata === true) {
-            setLoading(false)
-            await new Promise(resolve => setTimeout(resolve, 300))
-            router.push("/dashboard")
-            return
-          }
-          
-          // SEGUNDO: Se não estiver no metadata, verificar na tabela users
-          const { data: userProfile, error: profileError } = await supabase
-            .from("users")
-            .select("onboarding_completo")
-            .eq("id", data.user.id)
-            .single()
-
-          if (profileError) {
-            // Se o erro for porque o usuário não existe na tabela users, criar o registro
-            if (profileError.code === 'PGRST116' || profileError.message?.includes('No rows') || profileError.message?.includes('not found')) {
-              const { error: createError } = await supabase.from("users").insert({
-                id: data.user.id,
-                email: data.user.email || '',
-                nome: data.user.user_metadata?.name || data.user.email?.split('@')[0] || 'Usuário',
-                telefone: data.user.user_metadata?.telefone || `temp_${data.user.id.substring(0, 8)}`,
-                onboarding_completo: false,
-                trial_ate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
-              }).select().single()
-
-              if (createError) {
-                // Se for erro de permissão ao criar, mostrar erro amigável
-                if (createError.code === '42501' || createError.message?.includes('permission denied')) {
-                  setError("Erro ao acessar sua conta. Entre em contato com o suporte.")
-                  setLoading(false)
-                  return
-                }
-              }
-              
-              // Redirecionar para onboarding
-              setLoading(false)
-              window.location.href = "/onboarding"
-              return
-            }
-            
-            // Para outros erros, redirecionar para onboarding
-            setLoading(false)
-            window.location.href = "/onboarding"
-            return
-          }
-
-          // Se não encontrou o perfil ou onboarding não completo, vai para onboarding
-          if (!userProfile || !userProfile.onboarding_completo) {
-            setLoading(false)
-            window.location.href = "/onboarding"
-            return
-          }
-
-          // Onboarding completo, ir para dashboard
-          setLoading(false)
-          router.push("/dashboard")
-          return
-        } catch (err: any) {
-          // Em caso de erro, redirecionar para onboarding
-          setError("Redirecionando para configuração inicial...")
-          setLoading(false)
-          setTimeout(() => {
-            window.location.href = "/onboarding"
-          }, 2000)
-          return
-        }
+        // Login bem-sucedido, redirecionar para dashboard
+        setLoading(false)
+        await new Promise(resolve => setTimeout(resolve, 300))
+        router.push("/dashboard")
+        return
       } else {
         setError("Erro ao fazer login. Tente novamente.")
         setLoading(false)

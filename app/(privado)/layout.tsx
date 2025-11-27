@@ -11,15 +11,14 @@ export default function PrivateLayout({
   children: React.ReactNode
 }) {
   const pathname = usePathname()
-  const isOnboarding = pathname === "/onboarding"
   const isConfiguracoes = pathname === "/configuracoes" || pathname.startsWith("/configuracoes/")
 
   return (
     <ProtectedRoute>
       <div className="min-h-screen flex">
-        {!isOnboarding && <Sidebar />}
+        <Sidebar />
         <div className="flex-1 flex flex-col lg:ml-20">
-          {!isOnboarding && !isConfiguracoes && <Header />}
+          {!isConfiguracoes && <Header />}
           <main className="flex-1 bg-slate-50">{children}</main>
         </div>
       </div>
