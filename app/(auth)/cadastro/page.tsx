@@ -53,27 +53,27 @@ export default function CadastroPage() {
   }
 
   const getErrorMessage = (error: any): string => {
-    if (!error) return "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+    if (!error) return "Ocorreu um erro ao criar sua conta. Tente novamente."
     
     const errorCode = error.code || error.message
     
     if (errorCode.includes("email_address_invalid") || errorCode.includes("invalid_email")) {
-      return "Lorem ipsum dolor sit amet."
+      return "Por favor, informe um email válido."
     }
     
     if (errorCode.includes("email_already_registered") || errorCode.includes("user_already_exists")) {
-      return "Lorem ipsum dolor sit amet, consectetur adipiscing elit?"
+      return "Este email já está cadastrado. Deseja fazer login?"
     }
     
     if (errorCode.includes("password_too_short") || errorCode.includes("password_length")) {
-      return "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+      return "A senha deve ter no mínimo 8 caracteres e conter pelo menos um número."
     }
     
     if (errorCode.includes("invalid_credentials") || errorCode.includes("email_not_confirmed")) {
-      return "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+      return "Erro ao criar conta. Verifique os dados informados."
     }
     
-    return error.message || "Lorem ipsum dolor sit amet."
+    return error.message || "Ocorreu um erro ao criar sua conta. Tente novamente."
   }
 
   const handleSignUp = async (e: React.FormEvent) => {
@@ -86,38 +86,38 @@ export default function CadastroPage() {
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 
     if (!supabaseUrl || !supabaseAnonKey || supabaseUrl === 'https://placeholder.supabase.co') {
-      setError("Lorem ipsum dolor sit amet, consectetur adipiscing elit.")
+      setError("Sistema temporariamente indisponível. Tente novamente em alguns instantes.")
       setLoading(false)
       return
     }
 
     // Validações
     if (!name || !name.trim()) {
-      setError("Lorem ipsum dolor sit amet, consectetur adipiscing elit.")
+      setError("Por favor, informe seu nome completo.")
       setLoading(false)
       return
     }
 
     if (!emailValid) {
-      setError("Lorem ipsum dolor sit amet.")
+      setError("Por favor, informe um email válido.")
       setLoading(false)
       return
     }
 
     if (!passwordValid) {
-      setError("Lorem ipsum dolor sit amet, consectetur adipiscing elit.")
+      setError("A senha deve ter no mínimo 8 caracteres e conter pelo menos um número.")
       setLoading(false)
       return
     }
 
     if (!passwordsMatch) {
-      setError("Lorem ipsum dolor sit amet, consectetur adipiscing elit.")
+      setError("As senhas não coincidem. Verifique e tente novamente.")
       setLoading(false)
       return
     }
 
     if (telefone && !telefoneValid) {
-      setError("Lorem ipsum dolor sit amet.")
+      setError("Por favor, informe um telefone válido.")
       setLoading(false)
       return
     }
@@ -204,20 +204,20 @@ export default function CadastroPage() {
       {/* Logo */}
       <div className="mb-8 flex items-center gap-2">
         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600 text-white font-bold text-xl">
-          L
+          B
         </div>
-        <span className="font-display text-2xl font-bold text-white">LOREM</span>
+        <span className="font-display text-2xl font-bold text-white">BALANGO</span>
       </div>
 
       {/* Form Container */}
       <div className="w-full max-w-md bg-slate-900 rounded-2xl p-8 md:p-10 shadow-2xl">
-        <h1 className="text-3xl font-bold text-white mb-2">Lorem ipsum dolor</h1>
-        <p className="text-slate-400 mb-8">Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+        <h1 className="text-3xl font-bold text-white mb-2">Crie sua conta</h1>
+        <p className="text-slate-400 mb-8">Comece a organizar suas finanças de forma simples e inteligente.</p>
 
         <form onSubmit={handleSignUp} className="space-y-6">
           {/* Name Field */}
           <div className="space-y-2">
-            <Label htmlFor="name" className="text-white">Lorem ipsum</Label>
+            <Label htmlFor="name" className="text-white">Nome completo</Label>
             <div className="relative">
               <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
               <Input
@@ -228,14 +228,14 @@ export default function CadastroPage() {
                 required
                 disabled={loading}
                 className="pl-10 bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:border-blue-500 focus:ring-blue-500"
-                placeholder="Lorem ipsum"
+                placeholder="Seu nome completo"
               />
             </div>
           </div>
 
           {/* Email Field */}
           <div className="space-y-2">
-            <Label htmlFor="email" className="text-white">Lorem</Label>
+            <Label htmlFor="email" className="text-white">Email</Label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
               <Input
@@ -248,20 +248,20 @@ export default function CadastroPage() {
                 className={`pl-10 bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:border-blue-500 focus:ring-blue-500 ${
                   email && !emailValid ? "border-red-500" : ""
                 }`}
-                placeholder="lorem@ipsum.com"
+                placeholder="seu@email.com"
               />
             </div>
             {email && !emailValid && (
               <p className="text-sm text-red-400 flex items-center gap-1">
                 <AlertCircle className="h-4 w-4" />
-                Lorem ipsum dolor sit amet
+                Por favor, informe um email válido
               </p>
             )}
           </div>
 
           {/* Phone Field */}
           <div className="space-y-2">
-            <Label htmlFor="telefone" className="text-white">Lorem (Ipsum)</Label>
+            <Label htmlFor="telefone" className="text-white">Telefone (Opcional)</Label>
             <div className="relative">
               <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
               <Input
@@ -279,15 +279,15 @@ export default function CadastroPage() {
             {telefone && !telefoneValid && (
               <p className="text-sm text-red-400 flex items-center gap-1">
                 <AlertCircle className="h-4 w-4" />
-                Lorem ipsum dolor sit amet
+                Por favor, informe um telefone válido
               </p>
             )}
-            <p className="text-xs text-slate-500">Lorem ipsum - dolor sit amet, consectetur adipiscing elit</p>
+            <p className="text-xs text-slate-500">Opcional - usado para recuperação de conta e notificações</p>
           </div>
 
           {/* Password Field */}
           <div className="space-y-2">
-            <Label htmlFor="password" className="text-white">Lorem</Label>
+            <Label htmlFor="password" className="text-white">Senha</Label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
               <Input
@@ -300,7 +300,7 @@ export default function CadastroPage() {
                 className={`pl-10 pr-10 bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:border-blue-500 focus:ring-blue-500 ${
                   password && !passwordValid ? "border-red-500" : ""
                 }`}
-                placeholder="Lorem ipsum"
+                placeholder="Digite sua senha"
               />
               <button
                 type="button"
@@ -319,7 +319,7 @@ export default function CadastroPage() {
                   <X className="h-4 w-4 text-red-400" />
                 )}
                 <span className={passwordHasMinLength ? "text-emerald-400" : "text-slate-400"}>
-                  Lorem ipsum dolor
+                  Mínimo de 8 caracteres
                 </span>
               </div>
               <div className="flex items-center gap-2">
@@ -329,7 +329,7 @@ export default function CadastroPage() {
                   <X className="h-4 w-4 text-red-400" />
                 )}
                 <span className={passwordHasNumber ? "text-emerald-400" : "text-slate-400"}>
-                  Lorem ipsum dolor
+                  Pelo menos um número
                 </span>
               </div>
             </div>
@@ -337,7 +337,7 @@ export default function CadastroPage() {
 
           {/* Confirm Password Field */}
           <div className="space-y-2">
-            <Label htmlFor="confirmPassword" className="text-white">Lorem ipsum</Label>
+            <Label htmlFor="confirmPassword" className="text-white">Confirmar senha</Label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
               <Input
@@ -350,7 +350,7 @@ export default function CadastroPage() {
                 className={`pl-10 pr-10 bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:border-blue-500 focus:ring-blue-500 ${
                   confirmPassword && !passwordsMatch ? "border-red-500" : ""
                 }`}
-                placeholder="Lorem ipsum"
+                placeholder="Confirme sua senha"
               />
               <button
                 type="button"
@@ -363,7 +363,7 @@ export default function CadastroPage() {
             {confirmPassword && !passwordsMatch && (
               <p className="text-sm text-red-400 flex items-center gap-1">
                 <AlertCircle className="h-4 w-4" />
-                Lorem ipsum dolor sit amet
+                As senhas não coincidem
               </p>
             )}
           </div>
@@ -374,9 +374,9 @@ export default function CadastroPage() {
               <AlertCircle className="h-5 w-5 text-red-400 flex-shrink-0 mt-0.5" />
               <div className="flex-1">
                 <p className="text-sm text-red-400">{error}</p>
-                {error.includes("já está em uso") && (
+                {error.includes("já está cadastrado") && (
                   <Link href="/login" className="text-sm text-blue-400 hover:text-blue-300 underline mt-2 block">
-                    Lorem ipsum dolor
+                    Fazer login com este email
                   </Link>
                 )}
               </div>
@@ -389,7 +389,7 @@ export default function CadastroPage() {
             disabled={loading || !passwordValid || !passwordsMatch || !emailValid || (telefone ? !telefoneValid : false)}
             className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-6 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? "Lorem ipsum..." : "Lorem ipsum"}
+            {loading ? "Criando conta..." : "Criar conta grátis"}
           </Button>
         </form>
 
@@ -399,7 +399,7 @@ export default function CadastroPage() {
             <div className="w-full border-t border-slate-700"></div>
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-4 bg-slate-900 text-slate-400">Lorem ipsum</span>
+            <span className="px-4 bg-slate-900 text-slate-400">ou</span>
           </div>
         </div>
 
@@ -428,14 +428,14 @@ export default function CadastroPage() {
               fill="#EA4335"
             />
           </svg>
-          Lorem (ipsum)
+          Cadastrar com Google (em breve)
         </Button>
 
         {/* Login Link */}
         <div className="mt-6 text-center text-slate-400">
-          Lorem ipsum dolor?{" "}
+          Já tem uma conta?{" "}
           <Link href="/login" className="text-blue-400 hover:text-blue-300 underline transition-colors">
-            Lorem
+            Entrar
           </Link>
         </div>
       </div>
@@ -443,13 +443,13 @@ export default function CadastroPage() {
       {/* Footer */}
       <div className="mt-8 text-center text-sm text-slate-500 max-w-md px-4">
         <p>
-          Lorem ipsum dolor sit amet, consectetur adipiscing elit.{" "}
+          Ao criar uma conta, você concorda com nossos{" "}
           <Link href="#" className="text-slate-400 hover:text-white underline">
-            Lorem ipsum
+            Termos de Uso
           </Link>{" "}
-          et{" "}
+          e{" "}
           <Link href="#" className="text-slate-400 hover:text-white underline">
-            Dolor sit amet
+            Política de Privacidade
           </Link>
           .
         </p>

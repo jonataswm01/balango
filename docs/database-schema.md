@@ -137,3 +137,4 @@ technicians
 - A tabela `services` é a central do sistema, relacionando clientes e técnicos
 - Campos de status e prioridade usam valores textuais (podem ser enums no futuro)
 
+

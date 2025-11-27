@@ -232,3 +232,4 @@ export function isServiceCompleted(service: Service): boolean {
   return service.status === 'concluido'
 }
 
+

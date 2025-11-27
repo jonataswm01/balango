@@ -30,13 +30,13 @@ export default function EsqueciSenhaPage() {
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 
     if (!supabaseUrl || !supabaseAnonKey || supabaseUrl === 'https://placeholder.supabase.co') {
-      setError("Lorem ipsum dolor sit amet, consectetur adipiscing elit.")
+      setError("Sistema temporariamente indisponível. Tente novamente em alguns instantes.")
       setLoading(false)
       return
     }
 
     if (!emailValid) {
-      setError("Lorem ipsum dolor sit amet.")
+      setError("Por favor, informe um email válido.")
       setLoading(false)
       return
     }
@@ -67,24 +67,24 @@ export default function EsqueciSenhaPage() {
       {/* Logo */}
       <div className="mb-8 flex items-center gap-2">
         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600 text-white font-bold text-xl">
-          L
+          B
         </div>
-        <span className="font-display text-2xl font-bold text-white">LOREM</span>
+        <span className="font-display text-2xl font-bold text-white">BALANGO</span>
       </div>
 
       {/* Form Container */}
       <div className="w-full max-w-md bg-slate-900 rounded-2xl p-8 md:p-10 shadow-2xl">
         {!success ? (
           <>
-            <h1 className="text-3xl font-bold text-white mb-2">Lorem ipsum dolor sit amet?</h1>
+            <h1 className="text-3xl font-bold text-white mb-2">Esqueceu sua senha?</h1>
             <p className="text-slate-400 mb-8">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+              Não se preocupe! Informe seu email e enviaremos um link para redefinir sua senha.
             </p>
 
             <form onSubmit={handleResetPassword} className="space-y-6">
               {/* Email Field */}
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-white">Lorem</Label>
+                <Label htmlFor="email" className="text-white">Email</Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
                   <Input
@@ -97,13 +97,13 @@ export default function EsqueciSenhaPage() {
                     className={`pl-10 bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:border-blue-500 focus:ring-blue-500 ${
                       email && !emailValid ? "border-red-500" : ""
                     }`}
-                    placeholder="lorem@ipsum.com"
+                    placeholder="seu@email.com"
                   />
                 </div>
                 {email && !emailValid && (
                   <p className="text-sm text-red-400 flex items-center gap-1">
                     <AlertCircle className="h-4 w-4" />
-                    Lorem ipsum dolor sit amet
+                    Por favor, informe um email válido
                   </p>
                 )}
               </div>
@@ -122,7 +122,7 @@ export default function EsqueciSenhaPage() {
                 disabled={loading || !emailValid}
                 className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-6 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? "Lorem ipsum..." : "Lorem ipsum dolor"}
+                {loading ? "Enviando..." : "Enviar link de recuperação"}
               </Button>
             </form>
 
@@ -133,7 +133,7 @@ export default function EsqueciSenhaPage() {
                 className="text-sm text-blue-400 hover:text-blue-300 inline-flex items-center gap-2 transition-colors"
               >
                 <ArrowLeft className="h-4 w-4" />
-                Lorem ipsum dolor
+                Voltar para login
               </Link>
             </div>
           </>
@@ -145,25 +145,25 @@ export default function EsqueciSenhaPage() {
               </div>
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-white mb-2">Lorem ipsum dolor!</h2>
+              <h2 className="text-2xl font-bold text-white mb-2">Email enviado!</h2>
               <p className="text-slate-400">
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit <strong className="text-white">{email}</strong>
+                Enviamos um link de recuperação para <strong className="text-white">{email}</strong>
               </p>
             </div>
             <div className="bg-blue-500/20 border border-blue-500/50 rounded-lg p-4 text-left">
               <p className="text-sm text-blue-300">
-                <strong className="text-white">Lorem ipsum:</strong>
+                <strong className="text-white">Próximos passos:</strong>
                 <br />
-                1. Lorem ipsum dolor sit amet, consectetur adipiscing elit
+                1. Verifique sua caixa de entrada
                 <br />
-                2. Lorem ipsum dolor sit amet, consectetur adipiscing elit
+                2. Clique no link de recuperação de senha
                 <br />
-                3. Lorem ipsum dolor sit amet, consectetur adipiscing elit
+                3. Defina uma nova senha segura
               </p>
             </div>
             <div className="space-y-3">
               <p className="text-sm text-slate-400">
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+                Não recebeu o email? Verifique sua pasta de spam ou aguarde alguns minutos.
               </p>
               <Button
                 onClick={() => {
@@ -173,13 +173,13 @@ export default function EsqueciSenhaPage() {
                 variant="outline"
                 className="w-full bg-slate-800 border-slate-700 text-white hover:bg-slate-700"
               >
-                Lorem ipsum dolor
+                Tentar outro email
               </Button>
               <Link
                 href="/login"
                 className="block text-center text-sm text-blue-400 hover:text-blue-300 transition-colors"
               >
-                Lorem ipsum dolor
+                Voltar para login
               </Link>
             </div>
           </div>

@@ -24,34 +24,34 @@ export default function LoginPage() {
   const emailValid = email === "" || emailRegex.test(email)
 
   const getErrorMessage = (error: any): string => {
-    if (!error) return "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+    if (!error) return "Ocorreu um erro ao fazer login. Tente novamente."
     
     const errorCode = error.code || error.message || ""
     const errorMessage = error.message || ""
     
     // Mensagens amigáveis baseadas no tipo de erro
     if (errorCode.includes("invalid_credentials") || errorCode.includes("invalid_grant") || errorMessage.includes("Invalid login credentials")) {
-      return "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+      return "Email ou senha incorretos. Verifique suas credenciais e tente novamente."
     }
     
     if (errorCode.includes("email_not_confirmed") || errorCode.includes("email_not_verified") || errorMessage.includes("Email not confirmed")) {
-      return "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+      return "Seu email ainda não foi verificado. Verifique sua caixa de entrada e clique no link de confirmação."
     }
     
     if (errorCode.includes("too_many_requests") || errorMessage.includes("too many")) {
-      return "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+      return "Muitas tentativas de login. Aguarde alguns minutos e tente novamente."
     }
     
     if (errorCode.includes("email_address_invalid") || errorCode.includes("invalid_email") || errorMessage.includes("invalid email")) {
-      return "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+      return "Email inválido. Verifique o endereço de email informado."
     }
     
     if (errorMessage.includes("network") || errorMessage.includes("fetch")) {
-      return "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+      return "Erro de conexão. Verifique sua internet e tente novamente."
     }
     
     // Mensagem genérica amigável para outros erros
-    return "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+    return "Ocorreu um erro ao fazer login. Tente novamente."
   }
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -64,14 +64,14 @@ export default function LoginPage() {
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 
     if (!supabaseUrl || !supabaseAnonKey || supabaseUrl === 'https://placeholder.supabase.co') {
-      setError("Lorem ipsum dolor sit amet, consectetur adipiscing elit.")
+      setError("Sistema temporariamente indisponível. Tente novamente em alguns instantes.")
       setLoading(false)
       return
     }
 
     // Validação de email
     if (!emailValid) {
-      setError("Lorem ipsum dolor sit amet.")
+      setError("Por favor, informe um email válido.")
       setLoading(false)
       return
     }
@@ -92,7 +92,7 @@ export default function LoginPage() {
       if (data.user) {
         // Verificar se o email foi confirmado
         if (!data.user.email_confirmed_at) {
-          setError("Lorem ipsum dolor sit amet, consectetur adipiscing elit.")
+          setError("Seu email ainda não foi verificado. Verifique sua caixa de entrada e clique no link de confirmação.")
           setLoading(false)
           return
         }
@@ -131,7 +131,7 @@ export default function LoginPage() {
               if (createError) {
                 // Se for erro de permissão ao criar, mostrar erro amigável
                 if (createError.code === '42501' || createError.message?.includes('permission denied')) {
-                  setError("Lorem ipsum dolor sit amet, consectetur adipiscing elit.")
+                  setError("Erro ao acessar sua conta. Entre em contato com o suporte.")
                   setLoading(false)
                   return
                 }
@@ -162,7 +162,7 @@ export default function LoginPage() {
           return
         } catch (err: any) {
           // Em caso de erro, redirecionar para onboarding
-          setError("Lorem ipsum dolor sit amet, consectetur adipiscing elit.")
+          setError("Redirecionando para configuração inicial...")
           setLoading(false)
           setTimeout(() => {
             window.location.href = "/onboarding"
@@ -170,7 +170,7 @@ export default function LoginPage() {
           return
         }
       } else {
-        setError("Lorem ipsum dolor sit amet, consectetur adipiscing elit.")
+        setError("Erro ao fazer login. Tente novamente.")
         setLoading(false)
         return
       }
@@ -186,20 +186,20 @@ export default function LoginPage() {
       {/* Logo */}
       <div className="mb-8 flex items-center gap-2">
         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600 text-white font-bold text-xl">
-          L
+          B
         </div>
-        <span className="font-display text-2xl font-bold text-white">LOREM</span>
+        <span className="font-display text-2xl font-bold text-white">BALANGO</span>
       </div>
 
       {/* Form Container */}
       <div className="w-full max-w-md bg-slate-900 rounded-2xl p-8 md:p-10 shadow-2xl">
-        <h1 className="text-3xl font-bold text-white mb-2">Lorem ipsum dolor</h1>
-        <p className="text-slate-400 mb-8">Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+        <h1 className="text-3xl font-bold text-white mb-2">Bem-vindo de volta</h1>
+        <p className="text-slate-400 mb-8">Entre na sua conta para continuar organizando suas finanças.</p>
 
         <form onSubmit={handleLogin} className="space-y-6">
           {/* Email Field */}
           <div className="space-y-2">
-            <Label htmlFor="email" className="text-white">Lorem</Label>
+            <Label htmlFor="email" className="text-white">Email</Label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
               <Input
@@ -212,13 +212,13 @@ export default function LoginPage() {
                 className={`pl-10 bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:border-blue-500 focus:ring-blue-500 ${
                   email && !emailValid ? "border-red-500" : ""
                 }`}
-                placeholder="lorem@ipsum.com"
+                placeholder="seu@email.com"
               />
             </div>
             {email && !emailValid && (
               <p className="text-sm text-red-400 flex items-center gap-1">
                 <AlertCircle className="h-4 w-4" />
-                Lorem ipsum dolor sit amet
+                Por favor, informe um email válido
               </p>
             )}
           </div>
@@ -226,12 +226,12 @@ export default function LoginPage() {
           {/* Password Field */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor="password" className="text-white">Lorem</Label>
+              <Label htmlFor="password" className="text-white">Senha</Label>
               <Link
                 href="/esqueci-senha"
                 className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
               >
-                Lorem ipsum?
+                Esqueceu a senha?
               </Link>
             </div>
             <div className="relative">
@@ -244,7 +244,7 @@ export default function LoginPage() {
                 required
                 disabled={loading}
                 className="pl-10 pr-10 bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:border-blue-500 focus:ring-blue-500"
-                placeholder="Lorem ipsum"
+                placeholder="Digite sua senha"
               />
               <button
                 type="button"
@@ -266,7 +266,7 @@ export default function LoginPage() {
               className="h-4 w-4 rounded border-slate-700 bg-slate-800 text-blue-600 focus:ring-blue-500 focus:ring-offset-slate-900"
             />
             <Label htmlFor="remember-me" className="ml-2 text-sm text-slate-300 cursor-pointer">
-              Lorem ipsum
+              Lembrar de mim
             </Label>
           </div>
 
@@ -278,7 +278,7 @@ export default function LoginPage() {
                 <p className="text-sm text-red-400 font-semibold">{error}</p>
                 {(error.includes("não foi verificado") || error.includes("verifique sua caixa")) && (
                   <Link href={`/verificar-email?email=${encodeURIComponent(email)}`} className="text-sm text-blue-400 hover:text-blue-300 underline mt-2 block">
-                    Lorem ipsum dolor
+                    Reenviar email de verificação
                   </Link>
                 )}
               </div>
@@ -291,7 +291,7 @@ export default function LoginPage() {
             disabled={loading || !emailValid}
             className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-6 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? "Lorem..." : "Lorem"}
+            {loading ? "Entrando..." : "Entrar"}
           </Button>
         </form>
 
@@ -301,7 +301,7 @@ export default function LoginPage() {
             <div className="w-full border-t border-slate-700"></div>
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-4 bg-slate-900 text-slate-400">Lorem ipsum</span>
+            <span className="px-4 bg-slate-900 text-slate-400">ou</span>
           </div>
         </div>
 
@@ -330,14 +330,14 @@ export default function LoginPage() {
               fill="#EA4335"
             />
           </svg>
-          Lorem (ipsum)
+          Entrar com Google (em breve)
         </Button>
 
         {/* Register Link */}
         <div className="mt-6 text-center text-slate-400">
-          Lorem ipsum dolor?{" "}
+          Não tem uma conta?{" "}
           <Link href="/cadastro" className="text-blue-400 hover:text-blue-300 underline transition-colors">
-            Lorem ipsum
+            Cadastre-se grátis
           </Link>
         </div>
       </div>

@@ -103,3 +103,4 @@ CREATE TABLE public.users (
   CONSTRAINT users_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id)
 );
 
+

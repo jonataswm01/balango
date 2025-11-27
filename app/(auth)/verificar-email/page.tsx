@@ -41,9 +41,9 @@ function VerificarEmailContent() {
       {/* Logo */}
       <div className="mb-8 flex items-center gap-2">
         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600 text-white font-bold text-xl">
-          L
+          B
         </div>
-        <span className="font-display text-2xl font-bold text-white">LOREM</span>
+        <span className="font-display text-2xl font-bold text-white">BALANGO</span>
       </div>
 
       {/* Container */}
@@ -55,28 +55,28 @@ function VerificarEmailContent() {
         </div>
         
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Lorem ipsum dolor</h1>
+          <h1 className="text-3xl font-bold text-white mb-2">Verifique seu email</h1>
           <p className="text-slate-400">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+            Enviamos um link de confirmação para seu email. Clique no link para ativar sua conta.
           </p>
         </div>
 
         {email && (
           <div className="bg-blue-500/20 border border-blue-500/50 rounded-lg p-4">
             <p className="text-sm text-blue-300">
-              <strong className="text-white">Lorem:</strong> {email}
+              <strong className="text-white">Email:</strong> {email}
             </p>
           </div>
         )}
 
         <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-4 text-left space-y-2">
           <p className="text-sm text-slate-300">
-            <strong className="text-white">Lorem ipsum:</strong>
+            <strong className="text-white">Não recebeu o email?</strong>
           </p>
           <ol className="text-sm text-slate-400 space-y-1 list-decimal list-inside">
-            <li>Lorem ipsum dolor sit amet, consectetur adipiscing elit</li>
-            <li>Lorem ipsum dolor sit amet, consectetur adipiscing elit</li>
-            <li>Lorem ipsum dolor sit amet, consectetur adipiscing elit</li>
+            <li>Verifique sua caixa de entrada</li>
+            <li>Procure na pasta de spam ou lixo eletrônico</li>
+            <li>Aguarde alguns minutos e tente reenviar</li>
           </ol>
         </div>
 
@@ -87,7 +87,7 @@ function VerificarEmailContent() {
               disabled={loading}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white"
             >
-              {loading ? "Lorem ipsum..." : "Lorem ipsum dolor"}
+              {loading ? "Enviando..." : "Reenviar email de verificação"}
             </Button>
           )}
           <Link
@@ -95,7 +95,7 @@ function VerificarEmailContent() {
             className="block text-center text-sm text-blue-400 hover:text-blue-300 transition-colors"
           >
             <ArrowLeft className="inline h-4 w-4 mr-2" />
-            Lorem ipsum dolor
+            Voltar para login
           </Link>
         </div>
       </div>

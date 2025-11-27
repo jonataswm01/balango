@@ -17,8 +17,8 @@ const poppins = Poppins({
 })
 
 export const metadata: Metadata = {
-  title: "Lorem Ipsum - Dolor Sit Amet",
-  description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit",
+  title: "BALANGO - Controle Financeiro para Eventos",
+  description: "Controle financeiro simples para quem trabalha com eventos. Organize suas receitas, despesas e lucros de forma inteligente. Teste grátis por 7 dias.",
 }
 
 export default function RootLayout({
