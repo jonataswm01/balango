@@ -95,7 +95,7 @@ export async function POST(
     const tempPassword = crypto.randomBytes(12).toString('base64').replace(/[^a-zA-Z0-9]/g, '').substring(0, 12)
     
     // Criar ou obter usuário no Supabase Auth
-    let newUserId: string
+    let newUserId: string | undefined
     
     if (existingUser?.id) {
       // Usuário já existe na tabela users, usar o ID existente
@@ -165,6 +165,14 @@ export async function POST(
       } else {
         newUserId = newUser.user.id
       }
+    }
+
+    // Verificar se newUserId foi definido
+    if (!newUserId) {
+      return NextResponse.json(
+        { error: 'Erro ao criar ou obter usuário' },
+        { status: 500 }
+      )
     }
 
     // Criar ou atualizar registro na tabela users
