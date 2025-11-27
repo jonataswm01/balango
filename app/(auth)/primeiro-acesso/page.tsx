@@ -116,26 +116,25 @@ export default function PrimeiroAcessoPage() {
           .eq("id", user.id)
           .maybeSingle()
 
+        // Verificar onboarding da organização antes de mostrar sucesso
+        let redirectPath = "/onboarding"
+        
+        if (userProfile?.organization_id) {
+          const { data: organization } = await supabase
+            .from("organizations")
+            .select("onboarding_completo")
+            .eq("id", userProfile.organization_id)
+            .maybeSingle()
+          
+          if (organization?.onboarding_completo) {
+            redirectPath = "/dashboard"
+          }
+        }
+
         setSuccess(true)
 
         setTimeout(() => {
-          // Se não tem organização, precisa fazer onboarding
-          if (!userProfile?.organization_id) {
-            router.push("/onboarding")
-          } else {
-            // Verificar se organização completou onboarding
-            const { data: organization } = await supabase
-              .from("organizations")
-              .select("onboarding_completo")
-              .eq("id", userProfile.organization_id)
-              .maybeSingle()
-            
-            if (organization?.onboarding_completo) {
-              router.push("/dashboard")
-            } else {
-              router.push("/onboarding")
-            }
-          }
+          router.push(redirectPath)
         }, 2000)
       } else {
         // Se não está autenticado, tentar usar o token para resetar senha
