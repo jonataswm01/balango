@@ -7,36 +7,37 @@
 - [x] Atualizar Sidebar com novas rotas
 - [x] Criar estrutura de pastas para componentes
 - [x] Criar cliente HTTP para APIs (`lib/api/client.ts`)
+- [x] Decidir sobre `/configuracoes` vs `/settings` - **Solução: Manter `/configuracoes` e adicionar seção "Sistema" para configurações do Balango**
 
 ### **Fase 1: Funções Utilitárias** 🔧
-- [ ] Criar `lib/utils/services.ts` - Funções de formatação e cálculos
-- [ ] Criar `lib/utils/validations.ts` - Funções de validação
-- [ ] Criar `lib/utils/status.ts` - Funções de status e badges
-- [ ] Criar `lib/utils/filters.ts` - Funções de filtros
-- [ ] Criar `lib/api/client.ts` - Cliente HTTP para consumir APIs
+- [x] Criar `lib/utils/services.ts` - Funções de formatação e cálculos
+- [x] Criar `lib/utils/validations.ts` - Funções de validação
+- [x] Criar `lib/utils/status.ts` - Funções de status e badges
+- [x] Criar `lib/utils/filters.ts` - Funções de filtros
+- [x] Criar `lib/api/client.ts` - Cliente HTTP para consumir APIs ✅ (já estava criado)
 
 ### **Fase 2: Componentes Base** 🧩
-- [ ] ServiceCard - Card de serviço
-- [ ] ClientCard - Card de cliente
-- [ ] TechnicianCard - Card de técnico
-- [ ] KPICard - Card de KPI
-- [ ] FiltersPanel - Painel de filtros
-- [ ] LoadingSpinner - Spinner de carregamento
-- [ ] EmptyState - Estado vazio (sem dados)
-- [ ] ConfirmDialog - Dialog de confirmação
+- [x] ServiceCard - Card de serviço
+- [x] ClientCard - Card de cliente
+- [x] TechnicianCard - Card de técnico
+- [x] KPICard - Card de KPI
+- [x] FiltersPanel - Painel de filtros
+- [x] LoadingSpinner - Spinner de carregamento
+- [x] EmptyState - Estado vazio (sem dados)
+- [x] ConfirmDialog - Dialog de confirmação
 
 ### **Fase 3: Modais** 📝
-- [ ] ServiceModal - Modal criar/editar serviço
-- [ ] ClientModal - Modal criar/editar cliente
-- [ ] TechnicianModal - Modal criar/editar técnico
+- [x] ServiceModal - Modal criar/editar serviço
+- [x] ClientModal - Modal criar/editar cliente
+- [x] TechnicianModal - Modal criar/editar técnico
 
 ### **Fase 4: Dashboard** 📊
-- [ ] Página `/dashboard` ou `/`
-- [ ] Header com toggle modo escuro e filtros
-- [ ] Cards de KPI (4 principais + 1 destaque)
-- [ ] Lista de serviços com ServiceCard
-- [ ] FAB para mobile
-- [ ] Integração com API
+- [x] Página `/dashboard` ou `/`
+- [x] Header com toggle modo escuro e filtros
+- [x] Cards de KPI (4 principais + 1 destaque)
+- [x] Lista de serviços com ServiceCard
+- [x] FAB para mobile
+- [x] Integração com API
 
 ### **Fase 5: Cadastros** 👥
 - [ ] Página `/cadastros`

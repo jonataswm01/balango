@@ -16,20 +16,9 @@ import {
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { createClient } from "@/lib/supabase/client"
 
-const pageTitles: Record<string, { title: string; subtitle: string }> = {
-  "/dashboard": { title: "Lorem", subtitle: "Lorem ipsum dolor sit amet" },
-  "/historico": { title: "Ipsum", subtitle: "Lorem ipsum dolor sit amet" },
-  "/contas-fixas": { title: "Dolor", subtitle: "Lorem ipsum dolor sit amet" },
-  "/categorias": { title: "Sit", subtitle: "Lorem ipsum dolor sit amet" },
-  "/configuracoes": { title: "", subtitle: "" }, // Título vazio pois a sidebar já mostra
-  "/ajuda": { title: "Amet", subtitle: "Lorem ipsum dolor sit amet" },
-  "/assistente": { title: "Consectetur", subtitle: "Lorem ipsum dolor sit amet" },
-}
-
 export function Header() {
   const pathname = usePathname()
   const router = useRouter()
-  const pageInfo = pageTitles[pathname] || { title: "LOREM", subtitle: "" }
   const [user, setUser] = useState<{ id: string; email?: string; nome?: string; avatar_url?: string } | null>(null)
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
@@ -51,7 +40,7 @@ export function Header() {
           setUser({
             id: authUser.id,
             email: authUser.email,
-            nome: userData?.nome || authUser.email?.split("@")[0] || "Lorem",
+            nome: userData?.nome || authUser.email?.split("@")[0] || "Usuário",
             avatar_url: userData?.avatar_url || null,
           })
         }
@@ -72,7 +61,7 @@ export function Header() {
       
       if (error) {
         console.error("Erro ao fazer logout:", error)
-        alert("Lorem ipsum dolor sit amet.")
+        alert("Erro ao fazer logout. Tente novamente.")
         return
       }
 
@@ -81,7 +70,7 @@ export function Header() {
       router.refresh()
     } catch (error) {
       console.error("Erro ao fazer logout:", error)
-      alert("Lorem ipsum dolor sit amet.")
+      alert("Erro ao fazer logout. Tente novamente.")
     }
   }
 
@@ -97,15 +86,7 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
-      <div className="flex h-16 items-center justify-between px-6">
-        {/* Título da Página */}
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">{pageInfo.title}</h1>
-          {pageInfo.subtitle && (
-            <p className="text-sm text-slate-500">{pageInfo.subtitle}</p>
-          )}
-        </div>
-
+      <div className="flex h-16 items-center justify-end px-6">
         {/* Ações do Header */}
         <div className="flex items-center gap-3">
           {/* Notificações */}
@@ -154,7 +135,7 @@ export function Header() {
                   className="cursor-pointer"
                 >
                   <Settings className="mr-2 h-4 w-4" />
-                  <span>Lorem</span>
+                  <span>Configurações</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
@@ -162,7 +143,7 @@ export function Header() {
                   className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
                 >
                   <LogOut className="mr-2 h-4 w-4" />
-                  <span>Lorem ipsum</span>
+                  <span>Sair</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

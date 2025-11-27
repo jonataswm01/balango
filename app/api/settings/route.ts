@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { getUserOrganizationId } from '@/lib/api/auth'
 
 /**
  * GET /api/settings
@@ -57,11 +58,14 @@ export async function POST(request: NextRequest) {
     } = await supabase.auth.getUser()
 
     if (authError || !user) {
+      console.error('Erro de autenticação:', authError)
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
     }
 
     const body = await request.json()
     const { key, value, description } = body
+
+    console.log('Dados recebidos:', { key, value, description })
 
     if (!key) {
       return NextResponse.json({ error: 'Chave é obrigatória' }, { status: 400 })
@@ -71,22 +75,47 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Valor é obrigatório' }, { status: 400 })
     }
 
+    // Validar que value é um número
+    const numericValue = Number(value)
+    if (isNaN(numericValue)) {
+      return NextResponse.json({ error: 'Valor deve ser um número' }, { status: 400 })
+    }
+
+    // Buscar organization_id do usuário
+    const organizationId = await getUserOrganizationId(supabase)
+    if (!organizationId) {
+      return NextResponse.json(
+        { error: 'Usuário não está associado a uma organização' },
+        { status: 403 }
+      )
+    }
+
     // Verificar se configuração já existe
-    const { data: existing } = await supabase
+    const { data: existing, error: checkError } = await supabase
       .from('app_settings')
       .select('key')
       .eq('key', key)
-      .single()
+      .eq('organization_id', organizationId)
+      .maybeSingle()
+
+    if (checkError && checkError.code !== 'PGRST116') {
+      console.error('Erro ao verificar configuração:', checkError)
+      return NextResponse.json(
+        { error: 'Erro ao verificar configuração', details: checkError.message },
+        { status: 500 }
+      )
+    }
 
     if (existing) {
       // Atualizar
       const { data: updated, error: updateError } = await supabase
         .from('app_settings')
         .update({
-          value: Number(value),
+          value: numericValue,
           description: description || null,
         })
         .eq('key', key)
+        .eq('organization_id', organizationId)
         .select()
         .single()
 
@@ -105,8 +134,9 @@ export async function POST(request: NextRequest) {
         .from('app_settings')
         .insert({
           key,
-          value: Number(value),
+          value: numericValue,
           description: description || null,
+          organization_id: organizationId,
         })
         .select()
         .single()

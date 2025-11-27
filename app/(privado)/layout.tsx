@@ -3,6 +3,7 @@
 import { Sidebar } from "@/components/layout/sidebar"
 import { Header } from "@/components/layout/header"
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute"
+import { OrganizationProvider } from "@/lib/contexts/organization-context"
 import { usePathname } from "next/navigation"
 
 export default function PrivateLayout({
@@ -15,13 +16,15 @@ export default function PrivateLayout({
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen flex">
-        <Sidebar />
-        <div className="flex-1 flex flex-col lg:ml-20">
-          {!isConfiguracoes && <Header />}
-          <main className="flex-1 bg-slate-50">{children}</main>
+      <OrganizationProvider>
+        <div className="min-h-screen flex">
+          <Sidebar />
+          <div className="flex-1 flex flex-col lg:ml-20">
+            {!isConfiguracoes && <Header />}
+            <main className="flex-1 bg-slate-50 dark:bg-slate-900">{children}</main>
+          </div>
         </div>
-      </div>
+      </OrganizationProvider>
     </ProtectedRoute>
   )
 }

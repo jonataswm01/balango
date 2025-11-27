@@ -10,6 +10,7 @@ import {
   prepareServiceInsert,
   prepareServiceUpdate,
 } from '@/lib/api/services'
+import { getUserOrganizationId } from '@/lib/api/auth'
 
 /**
  * GET /api/services
@@ -129,8 +130,18 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Buscar organization_id do usuário
+    const organizationId = await getUserOrganizationId(supabase)
+    if (!organizationId) {
+      return NextResponse.json(
+        { error: 'Usuário não está associado a uma organização' },
+        { status: 403 }
+      )
+    }
+
     // Preparar dados (valores padrão e cálculos)
     const preparedData = await prepareServiceInsert(body, supabase)
+    preparedData.organization_id = organizationId
 
     // Inserir serviço
     const { data: service, error: insertError } = await supabase

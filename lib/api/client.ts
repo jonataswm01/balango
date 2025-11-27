@@ -6,6 +6,7 @@
 import { ServiceWithRelations, ServiceInsert, ServiceUpdate } from '@/lib/types/database'
 import { Client, ClientInsert, ClientUpdate } from '@/lib/types/database'
 import { Technician, TechnicianInsert, TechnicianUpdate } from '@/lib/types/database'
+import { Organization, OrganizationInsert, OrganizationUpdate, OrganizationMember, OrganizationMemberInsert, OrganizationMemberUpdate } from '@/lib/types/database'
 
 const API_BASE_URL = '/api'
 
@@ -316,6 +317,97 @@ export const settingsApi = {
 }
 
 // ============================================
+// ORGANIZATIONS API
+// ============================================
+
+export const organizationsApi = {
+  /**
+   * Lista organizações do usuário
+   */
+  async getAll(): Promise<Organization[]> {
+    return request<Organization[]>('/organizations')
+  },
+
+  /**
+   * Busca uma organização específica
+   */
+  async getById(id: string): Promise<Organization> {
+    return request<Organization>(`/organizations/${id}`)
+  },
+
+  /**
+   * Cria uma nova organização
+   */
+  async create(data: OrganizationInsert): Promise<Organization> {
+    return request<Organization>('/organizations', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  },
+
+  /**
+   * Atualiza uma organização
+   */
+  async update(id: string, data: OrganizationUpdate): Promise<Organization> {
+    return request<Organization>(`/organizations/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    })
+  },
+
+  /**
+   * Lista membros de uma organização
+   */
+  async getMembers(organizationId: string): Promise<Array<OrganizationMember & { user: any }>> {
+    return request<Array<OrganizationMember & { user: any }>>(
+      `/organizations/${organizationId}/members`
+    )
+  },
+
+  /**
+   * Adiciona um membro à organização
+   */
+  async addMember(
+    organizationId: string,
+    data: OrganizationMemberInsert
+  ): Promise<OrganizationMember & { user: any }> {
+    return request<OrganizationMember & { user: any }>(
+      `/organizations/${organizationId}/members`,
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }
+    )
+  },
+
+  /**
+   * Atualiza um membro
+   */
+  async updateMember(
+    organizationId: string,
+    memberId: string,
+    data: OrganizationMemberUpdate
+  ): Promise<OrganizationMember & { user: any }> {
+    return request<OrganizationMember & { user: any }>(
+      `/organizations/${organizationId}/members/${memberId}`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      }
+    )
+  },
+
+  /**
+   * Remove um membro da organização
+   */
+  async removeMember(organizationId: string, memberId: string): Promise<void> {
+    await request(`/organizations/${organizationId}/members/${memberId}`, {
+      method: 'DELETE',
+    })
+  },
+}
+
+// ============================================
 // EXPORT DEFAULT (tudo junto)
 // ============================================
 
@@ -324,5 +416,6 @@ export default {
   clients: clientsApi,
   technicians: techniciansApi,
   settings: settingsApi,
+  organizations: organizationsApi,
 }
 

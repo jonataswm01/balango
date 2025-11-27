@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { TechnicianInsert, TechnicianUpdate } from '@/lib/types/database'
+import { getUserOrganizationId } from '@/lib/api/auth'
 
 /**
  * GET /api/technicians
@@ -78,10 +79,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Nome é obrigatório' }, { status: 400 })
     }
 
+    // Buscar organization_id do usuário
+    const organizationId = await getUserOrganizationId(supabase)
+    if (!organizationId) {
+      return NextResponse.json(
+        { error: 'Usuário não está associado a uma organização' },
+        { status: 403 }
+      )
+    }
+
     // Valores padrão
     const technicianData: TechnicianInsert = {
       ...body,
       active: body.active !== undefined ? body.active : true,
+      organization_id: organizationId,
     }
 
     // Inserir técnico

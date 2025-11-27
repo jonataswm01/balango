@@ -10,6 +10,7 @@ export interface AppSetting {
   key: string
   value: number
   description?: string | null
+  organization_id: string
 }
 
 // ============================================
@@ -25,6 +26,7 @@ export interface Client {
   document?: string | null
   address?: string | null
   active: boolean
+  organization_id: string
 }
 
 export interface ClientInsert {
@@ -34,6 +36,7 @@ export interface ClientInsert {
   document?: string | null
   address?: string | null
   active?: boolean
+  organization_id?: string
 }
 
 export interface ClientUpdate {
@@ -79,6 +82,7 @@ export interface Service {
   completed_date?: string | null // TIMESTAMP format
   contact_phone?: string | null
   contact_email?: string | null
+  organization_id: string
 }
 
 export interface ServiceInsert {
@@ -105,6 +109,7 @@ export interface ServiceInsert {
   completed_date?: string | null
   contact_phone?: string | null
   contact_email?: string | null
+  organization_id?: string
 }
 
 export interface ServiceUpdate {
@@ -131,6 +136,7 @@ export interface ServiceUpdate {
   completed_date?: string | null
   contact_phone?: string | null
   contact_email?: string | null
+  organization_id?: string
 }
 
 // Service com relacionamentos (joins)
@@ -161,6 +167,7 @@ export interface TechnicianInsert {
   phone?: string | null
   email?: string | null
   document?: string | null
+  organization_id?: string
 }
 
 export interface TechnicianUpdate {
@@ -175,6 +182,8 @@ export interface TechnicianUpdate {
 // ============================================
 // USERS
 // ============================================
+export type MemberRole = 'admin' | 'member'
+
 export interface User {
   id: string
   email: string
@@ -183,6 +192,9 @@ export interface User {
   avatar_url?: string | null
   created_at: string
   updated_at: string
+  organization_id: string
+  role: MemberRole
+  active: boolean
 }
 
 export interface UserInsert {
@@ -191,6 +203,86 @@ export interface UserInsert {
   nome: string
   telefone: string
   avatar_url?: string | null
+  organization_id?: string
+  role?: MemberRole
+  active?: boolean
+}
+
+// ============================================
+// ORGANIZATIONS
+// ============================================
+export interface Organization {
+  id: string
+  name: string
+  slug: string
+  document?: string | null
+  phone?: string | null
+  email?: string | null
+  address?: string | null
+  logo_url?: string | null
+  active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface OrganizationInsert {
+  name: string
+  slug: string
+  document?: string | null
+  phone?: string | null
+  email?: string | null
+  address?: string | null
+  logo_url?: string | null
+  active?: boolean
+}
+
+export interface OrganizationUpdate {
+  name?: string
+  slug?: string
+  document?: string | null
+  phone?: string | null
+  email?: string | null
+  address?: string | null
+  logo_url?: string | null
+  active?: boolean
+}
+
+// ============================================
+// ORGANIZATION MEMBERS (Legacy - mantido para compatibilidade)
+// Agora os membros são os próprios Users com organization_id
+// ============================================
+export interface OrganizationMember {
+  id: string
+  organization_id: string
+  user_id: string
+  role: MemberRole
+  active: boolean
+  created_at: string
+  updated_at: string
+  // Relacionamentos
+  user?: User
+  organization?: Organization
+}
+
+export interface OrganizationMemberInsert {
+  organization_id: string
+  user_id: string
+  role?: MemberRole
+  active?: boolean
+}
+
+export interface OrganizationMemberUpdate {
+  role?: MemberRole
+  active?: boolean
+}
+
+export interface OrganizationMemberWithUser extends OrganizationMember {
+  user: User
+}
+
+// Helper type para representar um membro da organização (agora é um User)
+export interface OrganizationMemberUser extends User {
+  // User já tem organization_id, role e active
 }
 
 export interface UserUpdate {
@@ -198,6 +290,9 @@ export interface UserUpdate {
   nome?: string
   telefone?: string
   avatar_url?: string | null
+  organization_id?: string
+  role?: MemberRole
+  active?: boolean
 }
 
 // ============================================

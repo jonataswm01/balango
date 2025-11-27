@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, User, Lock, Bell, CreditCard, Users, Eye, EyeOff, Lock as LockIcon, Mail, Phone, Camera, Globe, Moon, Sun, Monitor, Search, MoreVertical, CheckCircle2 } from "lucide-react"
+import { ArrowLeft, User, Lock, Bell, CreditCard, Users, Eye, EyeOff, Lock as LockIcon, Mail, Phone, Camera, Globe, Moon, Sun, Monitor, Search, MoreVertical, CheckCircle2, Cog } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -10,23 +10,31 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card, CardContent } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { createClient } from "@/lib/supabase/client"
+import { useToast } from "@/components/ui/use-toast"
+import { MembrosSection } from "@/components/settings/membros-section"
 
-type SettingsSection = "perfil" | "seguranca" | "notificacoes" | "faturamento" | "membros"
+type SettingsSection = "perfil" | "seguranca" | "notificacoes" | "faturamento" | "membros" | "impostos"
 
 const settingsSections = [
   {
-    category: "Lorem ipsum",
+    category: "Conta",
     items: [
-      { id: "perfil" as SettingsSection, label: "Lorem ipsum", icon: User },
-      { id: "seguranca" as SettingsSection, label: "Lorem ipsum", icon: Lock },
-      { id: "notificacoes" as SettingsSection, label: "Lorem ipsum", icon: Bell },
+      { id: "perfil" as SettingsSection, label: "Perfil", icon: User },
+      { id: "seguranca" as SettingsSection, label: "Segurança", icon: Lock },
+      { id: "notificacoes" as SettingsSection, label: "Notificações", icon: Bell },
     ],
   },
   {
-    category: "Lorem ipsum",
+    category: "Organização",
     items: [
-      { id: "faturamento" as SettingsSection, label: "Lorem ipsum", icon: CreditCard },
-      { id: "membros" as SettingsSection, label: "Lorem ipsum", icon: Users },
+      { id: "faturamento" as SettingsSection, label: "Faturamento", icon: CreditCard },
+      { id: "membros" as SettingsSection, label: "Membros", icon: Users },
+    ],
+  },
+  {
+    category: "Balango",
+    items: [
+      { id: "impostos" as SettingsSection, label: "Impostos e Taxas", icon: Cog },
     ],
   },
 ]
@@ -45,7 +53,7 @@ export default function ConfiguracoesPage() {
         }
       }
     }
-    return { category: "Lorem ipsum", title: "Lorem ipsum" }
+    return { category: "Configurações", title: "Configurações" }
   }
 
   const sectionInfo = getSectionInfo()
@@ -62,9 +70,9 @@ export default function ConfiguracoesPage() {
             className="w-full justify-start text-slate-600 hover:text-slate-900 hover:bg-slate-100"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Lorem ipsum
+            Voltar
           </Button>
-          <h2 className="mt-4 text-lg font-semibold text-slate-900">Lorem ipsum</h2>
+          <h2 className="mt-4 text-lg font-semibold text-slate-900">Configurações</h2>
         </div>
 
         {/* Navegação */}
@@ -119,6 +127,7 @@ export default function ConfiguracoesPage() {
             {activeSection === "notificacoes" && <NotificacoesSection />}
             {activeSection === "faturamento" && <FaturamentoSection />}
             {activeSection === "membros" && <MembrosSection />}
+            {activeSection === "impostos" && <ImpostosSection />}
           </div>
         </div>
       </div>
@@ -161,9 +170,9 @@ function PerfilSection() {
       {/* Detalhes pessoais */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
         <div className="lg:col-span-1">
-          <h1 className="text-xl font-semibold text-slate-900 mb-2">Lorem ipsum</h1>
+          <h1 className="text-xl font-semibold text-slate-900 mb-2">Informações Pessoais</h1>
           <p className="text-sm text-slate-600">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+            Atualize suas informações pessoais, como nome, telefone e email. Essas informações serão usadas em toda a aplicação.
           </p>
         </div>
         <div className="lg:col-span-2">
@@ -179,13 +188,13 @@ function PerfilSection() {
                   </Avatar>
                   <Button variant="outline" size="sm" className="gap-2">
                     <Camera className="h-4 w-4" />
-                    Lorem ipsum
+                    Alterar Foto
                   </Button>
                 </div>
                 <div className="space-y-4">
                   <div>
                     <Label htmlFor="nome" className="text-sm font-medium text-slate-700">
-                      Lorem ipsum *
+                      Nome Completo *
                     </Label>
                     <Input
                       id="nome"
@@ -197,7 +206,7 @@ function PerfilSection() {
                   </div>
                   <div>
                     <Label htmlFor="telefone" className="text-sm font-medium text-slate-700">
-                      Lorem ipsum
+                      Telefone
                     </Label>
                     <Input
                       id="telefone"
@@ -209,7 +218,7 @@ function PerfilSection() {
                   </div>
                   <div>
                     <Label htmlFor="email" className="text-sm font-medium text-slate-700">
-                      Lorem ipsum
+                      Email
                     </Label>
                     <div className="flex gap-2 mt-1.5">
                       <Input
@@ -221,13 +230,13 @@ function PerfilSection() {
                         placeholder="seu@email.com"
                       />
                       <Button variant="outline" size="sm">
-                        Lorem ipsum
+                        Verificar Email
                       </Button>
                     </div>
                   </div>
                   <div className="flex justify-end pt-2">
                     <Button className="bg-emerald-600 hover:bg-emerald-700 text-white">
-                      Lorem ipsum
+                      Salvar Alterações
                     </Button>
                   </div>
                 </div>
@@ -240,9 +249,9 @@ function PerfilSection() {
       {/* Preferências */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
         <div className="lg:col-span-1">
-          <h2 className="text-xl font-semibold text-slate-900 mb-2">Lorem ipsum</h2>
+          <h2 className="text-xl font-semibold text-slate-900 mb-2">Preferências</h2>
           <p className="text-sm text-slate-600">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+            Configure o idioma e o tema da aplicação de acordo com suas preferências.
           </p>
         </div>
         <div className="lg:col-span-2">
@@ -251,10 +260,10 @@ function PerfilSection() {
               <div className="w-full max-w-md mx-auto space-y-6">
                 <div>
                   <Label className="text-sm font-medium text-slate-700 mb-1.5 block">
-                    Lorem ipsum
+                    Idioma
                   </Label>
                   <p className="text-xs text-slate-500 mb-3">
-                    Este é o idioma que será usado na aplicação.
+                    Selecione o idioma que será usado na aplicação.
                   </p>
                   <select
                     value={idioma}
@@ -268,10 +277,10 @@ function PerfilSection() {
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-slate-700 mb-1.5 block">
-                    Lorem ipsum
+                    Tema
                   </Label>
                   <p className="text-xs text-slate-500 mb-3">
-                    Selecione o tema da aplicação.
+                    Escolha entre tema claro, escuro ou seguir as preferências do sistema.
                   </p>
                   <div className="grid grid-cols-3 gap-3">
                     {[
@@ -311,7 +320,7 @@ function PerfilSection() {
                 </div>
                 <div className="flex justify-end pt-2">
                   <Button className="bg-emerald-600 hover:bg-emerald-700 text-white">
-                    Lorem ipsum
+                    Salvar Alterações
                   </Button>
                 </div>
               </div>
@@ -323,9 +332,9 @@ function PerfilSection() {
       {/* Zona de perigo */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
         <div className="lg:col-span-1">
-          <h2 className="text-xl font-semibold text-slate-900 mb-2">Lorem ipsum</h2>
+          <h2 className="text-xl font-semibold text-slate-900 mb-2">Zona de Perigo</h2>
           <p className="text-sm text-slate-600">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+            Ações irreversíveis relacionadas à sua conta. Use com cuidado.
           </p>
         </div>
         <div className="lg:col-span-2">
@@ -333,10 +342,10 @@ function PerfilSection() {
             <CardContent className="p-6 flex items-center justify-center min-h-[200px]">
               <div className="w-full max-w-md mx-auto">
                 <p className="text-sm text-red-600 mb-4">
-                  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+                  Ao excluir sua conta, todos os seus dados serão permanentemente removidos. Esta ação não pode ser desfeita.
                 </p>
                 <Button variant="destructive" disabled>
-                  Lorem ipsum
+                  Excluir Conta
                 </Button>
               </div>
             </CardContent>
@@ -357,18 +366,18 @@ function SegurancaSection() {
   return (
     <>
       <div>
-        <h1 className="text-2xl font-bold text-slate-900 mb-2">Lorem ipsum</h1>
+        <h1 className="text-2xl font-bold text-slate-900 mb-2">Segurança</h1>
         <p className="text-slate-600">
-          Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+          Gerencie sua senha, autenticação de dois fatores e sessões ativas para manter sua conta segura.
         </p>
       </div>
 
       {/* Alterar senha */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
         <div className="lg:col-span-1">
-          <h2 className="text-xl font-semibold text-slate-900 mb-2">Lorem ipsum</h2>
+          <h2 className="text-xl font-semibold text-slate-900 mb-2">Alterar Senha</h2>
           <p className="text-sm text-slate-600">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+            Mantenha sua conta segura alterando sua senha regularmente. Use uma senha forte com pelo menos 8 caracteres.
           </p>
         </div>
         <div className="lg:col-span-2">
@@ -378,7 +387,7 @@ function SegurancaSection() {
                 <div>
                   <Label htmlFor="current-password" className="text-sm font-medium text-slate-700 flex items-center gap-2">
                     <LockIcon className="h-4 w-4" />
-                    Lorem ipsum
+                    Senha Atual
                   </Label>
                   <div className="relative mt-1.5">
                     <Input
@@ -398,7 +407,7 @@ function SegurancaSection() {
                 <div>
                   <Label htmlFor="new-password" className="text-sm font-medium text-slate-700 flex items-center gap-2">
                     <LockIcon className="h-4 w-4" />
-                    Lorem ipsum
+                    Nova Senha
                   </Label>
                   <div className="relative mt-1.5">
                     <Input
@@ -426,14 +435,14 @@ function SegurancaSection() {
                       "text-xs",
                       newPassword.length >= 8 ? "text-emerald-600" : "text-red-600"
                     )}>
-                      Lorem ipsum dolor sit amet
+                      A senha deve ter pelo menos 8 caracteres
                     </span>
                   </div>
                 </div>
                 <div>
                   <Label htmlFor="confirm-password" className="text-sm font-medium text-slate-700 flex items-center gap-2">
                     <LockIcon className="h-4 w-4" />
-                    Lorem ipsum
+                    Confirmar Nova Senha
                   </Label>
                   <div className="relative mt-1.5">
                     <Input
@@ -452,7 +461,7 @@ function SegurancaSection() {
                 </div>
                 <div className="flex justify-end pt-2">
                   <Button className="bg-emerald-600 hover:bg-emerald-700 text-white">
-                    Lorem ipsum
+                    Alterar Senha
                   </Button>
                 </div>
               </div>
@@ -595,25 +604,25 @@ function NotificacoesSection() {
   return (
     <>
       <div>
-        <h1 className="text-2xl font-bold text-slate-900 mb-2">Lorem ipsum</h1>
+        <h1 className="text-2xl font-bold text-slate-900 mb-2">Notificações</h1>
         <p className="text-slate-600">
-          Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+          Configure como e quando você deseja receber notificações sobre atividades importantes.
         </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
         <div className="lg:col-span-1">
-          <h2 className="text-xl font-semibold text-slate-900 mb-2">Lorem ipsum</h2>
+          <h2 className="text-xl font-semibold text-slate-900 mb-2">Preferências de Notificação</h2>
           <p className="text-sm text-slate-600">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+            Em breve você poderá personalizar suas preferências de notificação por email, push e SMS.
           </p>
         </div>
         <div className="lg:col-span-2">
           <Card>
             <CardContent className="p-8 flex items-center justify-center min-h-[500px]">
-              <div className="w-full max-w-md mx-auto">
+              <div className="w-full max-w-md mx-auto text-center">
                 <p className="text-sm text-slate-500">
-                  Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+                  Em desenvolvimento. Em breve disponível.
                 </p>
               </div>
             </CardContent>
@@ -629,9 +638,9 @@ function FaturamentoSection() {
   return (
     <>
       <div>
-        <h1 className="text-2xl font-bold text-slate-900 mb-2">Lorem ipsum</h1>
+        <h1 className="text-2xl font-bold text-slate-900 mb-2">Faturamento</h1>
         <p className="text-slate-600">
-          Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+          Gerencie seu plano, método de pagamento e histórico de faturas.
         </p>
       </div>
 
@@ -680,7 +689,7 @@ function FaturamentoSection() {
                 </div>
                 <div className="flex justify-end">
                   <Button className="bg-emerald-600 hover:bg-emerald-700 text-white">
-                    Lorem ipsum
+                    Salvar Alterações
                   </Button>
                 </div>
               </div>
@@ -748,7 +757,7 @@ function FaturamentoSection() {
                 </div>
                 <div className="flex justify-end pt-2">
                   <Button className="bg-emerald-600 hover:bg-emerald-700 text-white">
-                    Lorem ipsum
+                    Salvar Alterações
                   </Button>
                 </div>
               </div>
@@ -778,97 +787,137 @@ function FaturamentoSection() {
   )
 }
 
-// Componente: Seção Membros
-function MembrosSection() {
+// Componente: Seção Impostos
+function ImpostosSection() {
+  const { toast } = useToast()
+  const [taxRatePercent, setTaxRatePercent] = useState<number>(0) // Valor em porcentagem (0-100)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    loadTaxRate()
+  }, [])
+
+  const loadTaxRate = async () => {
+    try {
+      setLoading(true)
+      const { settingsApi } = await import('@/lib/api/client')
+      const setting = await settingsApi.getByKey('tax_rate')
+      // Converter de decimal (0.15) para porcentagem (15)
+      setTaxRatePercent((setting.value || 0) * 100)
+    } catch (error: any) {
+      // Se não encontrar, mantém 0
+      setTaxRatePercent(0)
+      console.log('Taxa de imposto não configurada, usando padrão: 0')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSave = async () => {
+    if (taxRatePercent < 0 || taxRatePercent > 100) {
+      toast({
+        variant: "destructive",
+        title: "Valor inválido",
+        description: "A taxa de imposto deve estar entre 0% e 100%.",
+      })
+      return
+    }
+
+    try {
+      setSaving(true)
+      const { settingsApi } = await import('@/lib/api/client')
+      // Converter de porcentagem (15) para decimal (0.15) ao salvar
+      const taxRateDecimal = taxRatePercent / 100
+      await settingsApi.set('tax_rate', taxRateDecimal, 'Taxa de imposto aplicada aos serviços com nota fiscal')
+      
+      toast({
+        title: "Configuração salva!",
+        description: `Taxa de imposto de ${taxRatePercent.toFixed(2)}% foi salva com sucesso.`,
+      })
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao salvar",
+        description: error.message || "Não foi possível salvar a configuração.",
+      })
+    } finally {
+      setSaving(false)
+    }
+  }
+
   return (
     <>
       <div>
-        <h1 className="text-2xl font-bold text-slate-900 mb-2">Lorem ipsum</h1>
+        <h1 className="text-2xl font-bold text-slate-900 mb-2">Impostos e Taxas</h1>
         <p className="text-slate-600">
-          Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+          Configure as taxas de impostos que serão aplicadas automaticamente aos serviços com nota fiscal.
         </p>
       </div>
 
+      {/* Taxa de Imposto */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
         <div className="lg:col-span-1">
-          <h2 className="text-xl font-semibold text-slate-900 mb-2">Equipe</h2>
+          <h2 className="text-xl font-semibold text-slate-900 mb-2">Taxa de Imposto</h2>
           <p className="text-sm text-slate-600">
-            Gerencie e convide seus colegas.
+            Configure a taxa de imposto que será aplicada automaticamente aos serviços que possuem nota fiscal.
           </p>
         </div>
         <div className="lg:col-span-2">
           <Card>
-            <CardContent className="p-8 flex items-center justify-center min-h-[500px]">
-              <div className="w-full max-w-md mx-auto space-y-4">
-                <div className="flex gap-3">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                    <Input
-                      placeholder="Filtrar por nome ou email"
-                      className="pl-9"
-                    />
+            <CardContent className="p-8">
+              <div className="w-full max-w-md mx-auto space-y-6">
+                {loading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                   </div>
-                  <Button className="bg-emerald-600 hover:bg-emerald-700 text-white">
-                    Convidar membro
-                  </Button>
-                </div>
-                <div className="border-t border-slate-200 pt-4">
-                  <div className="flex items-center justify-between p-4 border border-slate-200 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-10 w-10">
-                        <AvatarFallback className="bg-blue-100 text-blue-600">J</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-medium text-slate-900">Jonatas</p>
-                        <p className="text-sm text-slate-500">jonataswm01@gmail.com</p>
+                ) : (
+                  <>
+                    <div>
+                      <Label htmlFor="tax-rate" className="text-sm font-medium text-slate-700 mb-1.5 block">
+                        Taxa de Imposto (%)
+                      </Label>
+                      <p className="text-xs text-slate-500 mb-3">
+                        Digite o valor em porcentagem. Exemplo: 15 para 15%, 18 para 18%
+                      </p>
+                      <div className="relative">
+                        <Input
+                          id="tax-rate"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          max="100"
+                          value={taxRatePercent}
+                          onChange={(e) => setTaxRatePercent(parseFloat(e.target.value) || 0)}
+                          disabled={saving}
+                          className="text-lg pr-8"
+                          placeholder="15"
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-lg">
+                          %
+                        </span>
                       </div>
+                      <p className="text-sm text-slate-500 mt-2">
+                        Taxa atual: <span className="font-semibold text-slate-900">{taxRatePercent.toFixed(2)}%</span>
+                      </p>
+                      {taxRatePercent > 0 && (
+                        <p className="text-xs text-emerald-600 mt-1 flex items-center gap-1">
+                          <CheckCircle2 className="h-3 w-3" />
+                          Esta taxa será aplicada automaticamente aos serviços com nota fiscal
+                        </p>
+                      )}
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="px-2 py-1 text-xs font-medium bg-red-100 text-red-700 rounded">Owner</span>
-                      <span className="px-2 py-1 text-xs font-medium bg-orange-100 text-orange-700 rounded">Admin</span>
-                      <Button variant="ghost" size="icon">
-                        <MoreVertical className="h-4 w-4" />
+                    <div className="flex justify-end pt-2">
+                      <Button 
+                        onClick={handleSave}
+                        disabled={saving || taxRatePercent < 0 || taxRatePercent > 100}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                      >
+                        {saving ? "Salvando..." : "Salvar Configuração"}
                       </Button>
                     </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
-        <div className="lg:col-span-1">
-          <h2 className="text-xl font-semibold text-slate-900 mb-2">Convites</h2>
-          <p className="text-sm text-slate-600">
-            Gerencie convites de usuários que ainda não aceitaram.
-          </p>
-        </div>
-        <div className="lg:col-span-2">
-          <Card>
-            <CardContent className="p-8 flex items-center justify-center min-h-[500px]">
-              <div className="w-full max-w-md mx-auto space-y-4">
-                <div className="flex gap-3">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                    <Input
-                      placeholder="Filter by email"
-                      className="pl-9"
-                    />
-                  </div>
-                </div>
-                <div className="flex gap-2 border-b border-slate-200">
-                  <button className="px-4 py-2 text-sm font-medium text-blue-600 border-b-2 border-blue-600">
-                    Pending
-                  </button>
-                  <button className="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-700">
-                    Revoked
-                  </button>
-                </div>
-                <div className="pt-4 text-center">
-                  <p className="text-sm text-slate-500">No pending invitation found.</p>
-                </div>
+                  </>
+                )}
               </div>
             </CardContent>
           </Card>
