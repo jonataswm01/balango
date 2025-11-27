@@ -7,11 +7,17 @@ import {
   Settings,
   HelpCircle,
   Sparkles,
+  Calendar,
+  Users,
+  Briefcase,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { name: "Serviços", href: "/services", icon: Briefcase },
+  { name: "Calendário", href: "/calendar", icon: Calendar },
+  { name: "Cadastros", href: "/cadastros", icon: Users },
   { name: "Ajuda", href: "/ajuda", icon: HelpCircle },
 ]
 
