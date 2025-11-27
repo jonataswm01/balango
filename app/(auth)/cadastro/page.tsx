@@ -189,8 +189,30 @@ export default function CadastroPage() {
         if (!emailConfirmed) {
           router.push(`/verificar-email?email=${encodeURIComponent(email)}`)
         } else {
-          // Se já confirmado (improvável, mas possível), ir direto para dashboard
-          router.push("/dashboard")
+          // Se já confirmado, verificar onboarding e redirecionar
+          const { data: userProfile } = await supabase
+            .from("users")
+            .select("organization_id")
+            .eq("id", data.user.id)
+            .maybeSingle()
+          
+          // Se não tem organização, precisa fazer onboarding
+          if (!userProfile?.organization_id) {
+            router.push("/onboarding")
+          } else {
+            // Verificar se organização completou onboarding
+            const { data: organization } = await supabase
+              .from("organizations")
+              .select("onboarding_completo")
+              .eq("id", userProfile.organization_id)
+              .maybeSingle()
+            
+            if (organization?.onboarding_completo) {
+              router.push("/dashboard")
+            } else {
+              router.push("/onboarding")
+            }
+          }
         }
       }
     } catch (err: any) {

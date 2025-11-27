@@ -91,10 +91,33 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      // Redirecionar para a página especificada (ou dashboard se for signup)
-      const redirectUrl = type === 'signup' 
-        ? new URL('/dashboard', requestUrl.origin)
-        : new URL(next, requestUrl.origin)
+      // Verificar se precisa completar onboarding
+      let redirectPath = next
+      if (type === 'signup') {
+        // Buscar organização do usuário
+        const { data: userProfile } = await supabase
+          .from('users')
+          .select('organization_id')
+          .eq('id', user.id)
+          .maybeSingle()
+        
+        // Se não tem organização, precisa fazer onboarding
+        if (!userProfile?.organization_id) {
+          redirectPath = '/onboarding'
+        } else {
+          // Verificar se organização completou onboarding
+          const { data: organization } = await supabase
+            .from('organizations')
+            .select('onboarding_completo')
+            .eq('id', userProfile.organization_id)
+            .maybeSingle()
+          
+          redirectPath = organization?.onboarding_completo ? '/dashboard' : '/onboarding'
+        }
+      }
+
+      // Redirecionar para a página especificada
+      const redirectUrl = new URL(redirectPath, requestUrl.origin)
       
       const redirectResponse = NextResponse.redirect(redirectUrl)
       

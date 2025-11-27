@@ -13,6 +13,16 @@ export default function PrivateLayout({
 }) {
   const pathname = usePathname()
   const isConfiguracoes = pathname === "/configuracoes" || pathname.startsWith("/configuracoes/")
+  const isOnboarding = pathname === "/onboarding"
+
+  // Se for onboarding, não mostrar sidebar/header
+  if (isOnboarding) {
+    return (
+      <ProtectedRoute requireOnboarding={false}>
+        {children}
+      </ProtectedRoute>
+    )
+  }
 
   return (
     <ProtectedRoute>
