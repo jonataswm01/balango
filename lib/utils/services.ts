@@ -76,20 +76,29 @@ export function formatMonthYear(date: Date | string): string {
 
 /**
  * Calcula KPIs de uma lista de serviços
+ * @param services Lista de serviços
+ * @param taxRate Taxa de imposto (opcional). Se fornecida, recalcula os impostos baseado em has_invoice e gross_value
  */
-export function calculateKPIs(services: Service[]) {
+export function calculateKPIs(services: Service[], taxRate?: number) {
   let receitaBruta = 0
   let totalCustos = 0
   let totalImpostos = 0
-  let baseNF = 0
 
   services.forEach((service) => {
     receitaBruta += Number(service.gross_value) || 0
     totalCustos += Number(service.operational_cost) || 0
-    totalImpostos += Number(service.tax_amount) || 0
-
-    if (service.has_invoice) {
-      baseNF += Number(service.gross_value) || 0
+    
+    // Se taxRate foi fornecida, recalcular impostos baseado em has_invoice e gross_value
+    // Caso contrário, usar o tax_amount salvo no banco
+    if (taxRate !== undefined && taxRate > 0) {
+      const calculatedTax = calculateTaxAmount(
+        Number(service.gross_value) || 0,
+        service.has_invoice || false,
+        taxRate
+      )
+      totalImpostos += calculatedTax
+    } else {
+      totalImpostos += Number(service.tax_amount) || 0
     }
   })
 
@@ -99,7 +108,7 @@ export function calculateKPIs(services: Service[]) {
   return {
     receitaBruta: Number(receitaBruta.toFixed(2)),
     receitaSemCustos: Number(receitaSemCustos.toFixed(2)),
-    baseNF: Number(baseNF.toFixed(2)),
+    totalCustos: Number(totalCustos.toFixed(2)),
     impostos: Number(totalImpostos.toFixed(2)),
     lucroLiquido: Number(lucroLiquido.toFixed(2)),
   }

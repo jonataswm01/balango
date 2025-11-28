@@ -4,18 +4,18 @@ import { useState, useEffect } from "react"
 import { Plus, Briefcase } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/ui/use-toast"
-import { servicesApi } from "@/lib/api/client"
+import { servicesApi, settingsApi } from "@/lib/api/client"
 import { ServiceWithRelations } from "@/lib/types/database"
 import { ServiceFilters, filterServices, countActiveFilters, clearFilters } from "@/lib/utils/filters"
-import { calculateKPIs } from "@/lib/utils/services"
-import { KPICard } from "@/components/shared/kpi-card"
+import { ChartType, FIXED_CHART, isTimeBasedChart } from "@/lib/utils/charts"
+import { ChartSelector } from "@/components/shared/chart-selector"
+import { ChartWrapper } from "@/components/dashboard/chart-wrapper"
 import { ServiceCard } from "@/components/services/service-card"
 import { ServiceModal } from "@/components/services/service-modal"
 import { FiltersPanel } from "@/components/shared/filters-panel"
 import { LoadingSpinner } from "@/components/shared/loading-spinner"
 import { EmptyState } from "@/components/shared/empty-state"
 import { ConfirmDialog } from "@/components/shared/confirm-dialog"
-import { TrendingUp, DollarSign, FileText, Receipt, Sparkles } from "lucide-react"
 
 export default function DashboardPage() {
   const { toast } = useToast()
@@ -30,6 +30,15 @@ export default function DashboardPage() {
   const [technicians, setTechnicians] = useState<
     Array<{ id: string; name: string; nickname: string | null }>
   >([])
+  const [taxRate, setTaxRate] = useState<number>(0)
+  // Gráficos selecionados (padrão: gráfico fixo + 4 KPIs iniciais)
+  const [selectedCharts, setSelectedCharts] = useState<ChartType[]>([
+    'kpi-lucro-liquido', // Fixo - sempre presente
+    'kpi-receita-bruta',
+    'kpi-sem-custos',
+    'kpi-custo-operacional',
+    'kpi-impostos'
+  ])
 
   // Carregar serviços
   const loadServices = async () => {
@@ -62,10 +71,21 @@ export default function DashboardPage() {
     }
   }
 
+  // Carregar taxa de imposto
+  const loadTaxRate = async () => {
+    try {
+      const taxRateData = await settingsApi.getByKeySafe("tax_rate")
+      setTaxRate(taxRateData?.value || 0)
+    } catch (error) {
+      console.error("Erro ao carregar taxa de imposto:", error)
+    }
+  }
+
   // Carregar dados iniciais
   useEffect(() => {
     loadServices()
     loadFilterData()
+    loadTaxRate()
   }, [])
 
   // Aplicar filtros quando mudarem
@@ -76,8 +96,7 @@ export default function DashboardPage() {
     setFilteredServices(filtered)
   }, [services, filters])
 
-  // Calcular KPIs dos serviços filtrados
-  const kpis = calculateKPIs(filteredServices)
+  // Não precisamos mais calcular KPIs aqui, será feito no ChartWrapper
 
   // Handlers
   const handleCreateService = () => {
@@ -128,6 +147,13 @@ export default function DashboardPage() {
     setFilters(clearFilters())
   }
 
+  // Garantir que o gráfico fixo sempre esteja selecionado
+  useEffect(() => {
+    if (!selectedCharts.includes(FIXED_CHART)) {
+      setSelectedCharts([FIXED_CHART, ...selectedCharts])
+    }
+  }, [selectedCharts])
+
   const activeFiltersCount = countActiveFilters(filters)
   const totalServices = services.length
   const showingServices = filteredServices.length
@@ -154,6 +180,10 @@ export default function DashboardPage() {
             clients={clients}
             technicians={technicians}
           />
+          <ChartSelector
+            selectedCharts={selectedCharts}
+            onChartsChange={setSelectedCharts}
+          />
           <Button
             onClick={handleCreateService}
             className="gap-2 bg-blue-600 hover:bg-blue-700 text-white"
@@ -164,45 +194,42 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Cards de KPI */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <KPICard
-          title="Receita Bruta"
-          value={kpis.receitaBruta}
-          icon={DollarSign}
-          color="blue"
-        />
-        <KPICard
-          title="Sem Custos"
-          value={kpis.receitaSemCustos}
-          icon={TrendingUp}
-          color="emerald"
-        />
-        <KPICard
-          title="Base NF"
-          value={kpis.baseNF}
-          icon={FileText}
-          color="amber"
-        />
-        <KPICard
-          title="Impostos"
-          value={kpis.impostos}
-          icon={Receipt}
-          color="red"
-        />
-      </div>
-
-      {/* Card Destaque - Lucro Líquido */}
-      <div className="w-full">
-        <KPICard
-          title="Lucro Líquido Total"
-          value={kpis.lucroLiquido}
-          icon={Sparkles}
-          color="emerald"
-          highlight={true}
-          subtitle="Receita bruta menos custos e impostos"
-        />
-      </div>
+      {/* Gráficos Selecionados */}
+      {selectedCharts.length > 0 ? (
+        <div className="space-y-6">
+          {/* Outros gráficos selecionados - todos ocupam 1 coluna */}
+          {selectedCharts.filter((id) => id !== FIXED_CHART).length > 0 && (
+            <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
+              {selectedCharts
+                .filter((id) => id !== FIXED_CHART)
+                .map((chartType) => (
+                  <ChartWrapper
+                    key={chartType}
+                    chartType={chartType}
+                    services={filteredServices}
+                    taxRate={taxRate}
+                  />
+                ))}
+            </div>
+          )}
+          
+          {/* Gráfico Fixo - Lucro Líquido (sempre embaixo em destaque) */}
+          <ChartWrapper
+            chartType={FIXED_CHART}
+            services={filteredServices}
+            taxRate={taxRate}
+          />
+        </div>
+      ) : (
+        <div className="p-8 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-lg text-center">
+          <p className="text-slate-600 dark:text-slate-400 mb-2">
+            Nenhum gráfico selecionado
+          </p>
+          <p className="text-sm text-slate-500 dark:text-slate-500">
+            Clique no botão "Gráficos" para selecionar até 4 gráficos para exibir
+          </p>
+        </div>
+      )}
 
       {/* Lista de Serviços */}
       {loading ? (

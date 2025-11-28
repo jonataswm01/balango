@@ -20,9 +20,19 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
     }
 
+    // Buscar organization_id do usuário
+    const organizationId = await getUserOrganizationId(supabase)
+    if (!organizationId) {
+      return NextResponse.json(
+        { error: 'Usuário não está associado a uma organização' },
+        { status: 403 }
+      )
+    }
+
     const { data: settings, error } = await supabase
       .from('app_settings')
       .select('*')
+      .eq('organization_id', organizationId)
       .order('key', { ascending: true })
 
     if (error) {

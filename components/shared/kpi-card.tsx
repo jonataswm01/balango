@@ -12,6 +12,7 @@ interface KPICardProps {
   color?: "emerald" | "blue" | "amber" | "red" | "purple"
   subtitle?: string
   highlight?: boolean
+  large?: boolean
 }
 
 const colorClasses = {
@@ -49,6 +50,7 @@ export function KPICard({
   color = "blue",
   subtitle,
   highlight = false,
+  large = false,
 }: KPICardProps) {
   const colors = colorClasses[color]
 
@@ -68,7 +70,7 @@ export function KPICard({
       >
         <CardTitle
           className={cn(
-            "text-sm font-medium",
+            large ? "text-lg font-semibold" : "text-sm font-medium",
             highlight ? "text-white" : "text-slate-600 dark:text-slate-400"
           )}
         >
@@ -76,13 +78,14 @@ export function KPICard({
         </CardTitle>
         <div
           className={cn(
-            "h-10 w-10 rounded-full flex items-center justify-center",
+            large ? "h-14 w-14" : "h-10 w-10",
+            "rounded-full flex items-center justify-center",
             highlight ? "bg-white/20" : colors.bg
           )}
         >
           <Icon
             className={cn(
-              "h-5 w-5",
+              large ? "h-7 w-7" : "h-5 w-5",
               highlight ? "text-white" : colors.icon
             )}
           />
@@ -91,7 +94,7 @@ export function KPICard({
       <CardContent>
         <div
           className={cn(
-            "text-2xl font-bold",
+            large ? "text-3xl font-bold" : "text-2xl font-bold",
             highlight ? "text-white" : colors.value
           )}
         >
@@ -100,7 +103,7 @@ export function KPICard({
         {subtitle && (
           <p
             className={cn(
-              "text-xs mt-1",
+              large ? "text-sm mt-2" : "text-xs mt-1",
               highlight
                 ? "text-white/80"
                 : "text-slate-500 dark:text-slate-400"

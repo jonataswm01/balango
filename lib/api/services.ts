@@ -10,10 +10,19 @@ import { Service, ServiceInsert, ServiceUpdate, ServiceStatus } from '@/lib/type
  */
 export async function getTaxRate(supabase: any): Promise<number> {
   try {
+    // Importar getUserOrganizationId dinamicamente para evitar dependência circular
+    const { getUserOrganizationId } = await import('@/lib/api/auth')
+    
+    const organizationId = await getUserOrganizationId(supabase)
+    if (!organizationId) {
+      return 0
+    }
+
     const { data, error } = await supabase
       .from('app_settings')
       .select('value')
       .eq('key', 'tax_rate')
+      .eq('organization_id', organizationId)
       .single()
 
     if (error || !data) {

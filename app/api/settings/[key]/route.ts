@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { getUserOrganizationId } from '@/lib/api/auth'
 
 /**
  * GET /api/settings/[key]
@@ -22,12 +23,22 @@ export async function GET(
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
     }
 
+    // Buscar organization_id do usuário
+    const organizationId = await getUserOrganizationId(supabase)
+    if (!organizationId) {
+      return NextResponse.json(
+        { error: 'Usuário não está associado a uma organização' },
+        { status: 403 }
+      )
+    }
+
     const { key } = params
 
     const { data: setting, error } = await supabase
       .from('app_settings')
       .select('*')
       .eq('key', key)
+      .eq('organization_id', organizationId)
       .single()
 
     if (error) {
@@ -72,6 +83,15 @@ export async function PATCH(
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
     }
 
+    // Buscar organization_id do usuário
+    const organizationId = await getUserOrganizationId(supabase)
+    if (!organizationId) {
+      return NextResponse.json(
+        { error: 'Usuário não está associado a uma organização' },
+        { status: 403 }
+      )
+    }
+
     const { key } = params
     const body = await request.json()
     const { value, description } = body
@@ -95,6 +115,7 @@ export async function PATCH(
       .from('app_settings')
       .update(updateData)
       .eq('key', key)
+      .eq('organization_id', organizationId)
       .select()
       .single()
 

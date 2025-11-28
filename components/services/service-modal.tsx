@@ -101,12 +101,12 @@ export function ServiceModal({
         const [clientsData, techniciansData, taxRateData] = await Promise.all([
           servicesApi.getClients(),
           servicesApi.getTechnicians(),
-          settingsApi.getByKey("tax_rate").catch(() => ({ value: 0 })),
+          settingsApi.getByKeySafe("tax_rate"),
         ])
 
         setClients(clientsData)
         setTechnicians(techniciansData)
-        setTaxRate(taxRateData.value || 0)
+        setTaxRate(taxRateData?.value || 0)
 
         // Preencher formulário se estiver editando
         if (service) {
@@ -173,7 +173,8 @@ export function ServiceModal({
 
   // Calcular imposto automaticamente quando valor bruto, NF ou número da NF mudar
   useEffect(() => {
-    if (formData.gross_value && formData.gross_value > 0 && formData.has_invoice) {
+    // Só calcular se tiver valor bruto, nota fiscal marcada E taxa carregada
+    if (formData.gross_value && formData.gross_value > 0 && formData.has_invoice && taxRate > 0) {
       const calculatedTax = calculateTaxAmount(
         formData.gross_value,
         formData.has_invoice,
