@@ -50,7 +50,7 @@ export function MobileMenu({ open, onOpenChange }: MobileMenuProps) {
             <div className="flex items-center justify-between">
               <Link href="/dashboard" onClick={handleLinkClick}>
                 <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-500 text-white font-bold text-xl shadow-md">
-                  L
+                  B
                 </div>
               </Link>
               <button
