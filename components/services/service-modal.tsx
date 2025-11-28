@@ -129,8 +129,8 @@ export function ServiceModal({
             payment_date: service.payment_date || "",
             location: service.location || "",
             notes: service.notes || "",
-            estimated_hours: service.estimated_hours || "",
-            actual_hours: service.actual_hours || "",
+            estimated_hours: service.estimated_hours ?? null,
+            actual_hours: service.actual_hours ?? null,
             contact_phone: service.contact_phone || "",
             contact_email: service.contact_email || "",
           })
@@ -304,7 +304,7 @@ export function ServiceModal({
 
   // Calcular lucro líquido para exibição
   const netProfit =
-    formData.gross_value - (formData.operational_cost || 0) - (formData.tax_amount || 0)
+    (formData.gross_value || 0) - (formData.operational_cost || 0) - (formData.tax_amount || 0)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -479,7 +479,7 @@ export function ServiceModal({
                       {errors.gross_value}
                     </p>
                   )}
-                  {formData.gross_value > 0 && !errors.gross_value && (
+                  {formData.gross_value !== undefined && formData.gross_value > 0 && !errors.gross_value && (
                     <p className="text-xs text-emerald-600 flex items-center gap-1">
                       <CheckCircle2 className="h-3 w-3" />
                       {formatCurrency(formData.gross_value)}
@@ -517,7 +517,7 @@ export function ServiceModal({
               </div>
 
               {/* Resumo de Cálculos */}
-              {formData.gross_value > 0 && (
+              {formData.gross_value !== undefined && formData.gross_value > 0 && (
                 <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4 space-y-2 border border-slate-200 dark:border-slate-700">
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-600 dark:text-slate-400">
@@ -527,7 +527,7 @@ export function ServiceModal({
                       {formatCurrency(formData.gross_value)}
                     </span>
                   </div>
-                  {formData.operational_cost > 0 && (
+                  {formData.operational_cost !== undefined && formData.operational_cost > 0 && (
                     <div className="flex justify-between text-sm">
                       <span className="text-slate-600 dark:text-slate-400">
                         (-) Custos:
@@ -537,7 +537,7 @@ export function ServiceModal({
                       </span>
                     </div>
                   )}
-                  {formData.tax_amount > 0 && (
+                  {formData.tax_amount !== undefined && formData.tax_amount > 0 && (
                     <div className="flex justify-between text-sm">
                       <span className="text-slate-600 dark:text-slate-400">
                         (-) Impostos:
@@ -757,11 +757,11 @@ export function ServiceModal({
                         type="number"
                         step="0.5"
                         min="0"
-                        value={formData.estimated_hours || ""}
+                        value={formData.estimated_hours?.toString() || ""}
                         onChange={(e) =>
                           setFormData({
                             ...formData,
-                            estimated_hours: parseFloat(e.target.value) || null,
+                            estimated_hours: e.target.value ? parseFloat(e.target.value) : null,
                           })
                         }
                         placeholder="Ex: 2 ou 2.5"

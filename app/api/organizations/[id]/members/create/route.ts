@@ -101,9 +101,9 @@ export async function POST(
       // Usuário já existe na tabela users, usar o ID existente
       newUserId = existingUser.id
       
-      // Atualizar senha no Auth
+      // Atualizar senha no Auth (usar existingUser.id diretamente pois já foi verificado)
       const { error: updatePasswordError } = await adminClient.auth.admin.updateUserById(
-        newUserId,
+        existingUser.id,
         { password: tempPassword }
       )
 

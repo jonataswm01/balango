@@ -84,7 +84,7 @@ export function updateServiceStatus(
  * Limpa campos undefined/null/vazios do update (exceto campos de texto livre)
  */
 export function cleanUpdateData(data: ServiceUpdate): ServiceUpdate {
-  const cleaned: ServiceUpdate = {}
+  const cleaned: Partial<ServiceUpdate> = {}
 
   // Campos que podem ser strings vazias (texto livre)
   const textFields = ['description', 'notes', 'location', 'invoice_number']
@@ -94,17 +94,19 @@ export function cleanUpdateData(data: ServiceUpdate): ServiceUpdate {
 
     // Se for campo de texto livre, mantém mesmo se vazio
     if (textFields.includes(key)) {
-      cleaned[key as keyof ServiceUpdate] = value
+      if (value !== undefined) {
+        cleaned[key as keyof ServiceUpdate] = value as any
+      }
       return
     }
 
     // Para outros campos, remove undefined, null e strings vazias
     if (value !== undefined && value !== null && value !== '') {
-      cleaned[key as keyof ServiceUpdate] = value
+      cleaned[key as keyof ServiceUpdate] = value as any
     }
   })
 
-  return cleaned
+  return cleaned as ServiceUpdate
 }
 
 /**
