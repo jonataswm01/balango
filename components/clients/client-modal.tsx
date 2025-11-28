@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { Loader2, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 import {
   Dialog,
   DialogContent,
@@ -34,6 +35,7 @@ export function ClientModal({
 }: ClientModalProps) {
   const { toast } = useToast()
   const [saving, setSaving] = useState(false)
+  const [documentType, setDocumentType] = useState<"CPF" | "CNPJ">("CPF")
 
   const [formData, setFormData] = useState<ClientInsert>({
     name: "",
@@ -55,6 +57,11 @@ export function ClientModal({
         address: client.address || "",
         active: client.active,
       })
+      // Detectar tipo de documento baseado no tamanho
+      if (client.document) {
+        const cleanDoc = client.document.replace(/\D/g, "")
+        setDocumentType(cleanDoc.length === 14 ? "CNPJ" : "CPF")
+      }
     } else if (!client && open) {
       // Resetar formulário para novo cliente
       setFormData({
@@ -65,6 +72,7 @@ export function ClientModal({
         address: "",
         active: true,
       })
+      setDocumentType("CPF")
     }
   }, [client, open])
 
@@ -136,7 +144,7 @@ export function ClientModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] mx-4 my-4 max-w-[calc(100%-2rem)]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <User className="h-5 w-5" />
@@ -166,45 +174,73 @@ export function ClientModal({
             />
           </div>
 
-          {/* Email e Telefone */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email || ""}
-                onChange={(e) =>
-                  setFormData({ ...formData, email: e.target.value })
-                }
-                placeholder="email@exemplo.com"
-              />
-            </div>
+          {/* Email */}
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              value={formData.email || ""}
+              onChange={(e) =>
+                setFormData({ ...formData, email: e.target.value })
+              }
+              placeholder="email@exemplo.com"
+            />
+          </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="phone">Telefone</Label>
-              <Input
-                id="phone"
-                type="tel"
-                value={formData.phone || ""}
-                onChange={(e) =>
-                  setFormData({ ...formData, phone: e.target.value })
-                }
-                placeholder="(00) 00000-0000"
-              />
-            </div>
+          {/* Telefone */}
+          <div className="space-y-2">
+            <Label htmlFor="phone">Telefone</Label>
+            <Input
+              id="phone"
+              type="tel"
+              value={formData.phone || ""}
+              onChange={(e) =>
+                setFormData({ ...formData, phone: e.target.value })
+              }
+              placeholder="(00) 00000-0000"
+            />
           </div>
 
           {/* Documento */}
           <div className="space-y-2">
             <Label htmlFor="document">CPF/CNPJ</Label>
+            {/* Toggle CPF/CNPJ */}
+            <div className="flex mb-2">
+              <Button
+                type="button"
+                variant={documentType === "CPF" ? "default" : "outline"}
+                onClick={() => {
+                  setDocumentType("CPF")
+                  setFormData({ ...formData, document: "" })
+                }}
+                className="flex-1 rounded-r-none border-r-0"
+              >
+                CPF
+              </Button>
+              <Button
+                type="button"
+                variant={documentType === "CNPJ" ? "default" : "outline"}
+                onClick={() => {
+                  setDocumentType("CNPJ")
+                  setFormData({ ...formData, document: "" })
+                }}
+                className="flex-1 rounded-l-none border-l-0"
+              >
+                CNPJ
+              </Button>
+            </div>
             <Input
               id="document"
               value={formData.document || ""}
               onChange={(e) =>
                 setFormData({ ...formData, document: e.target.value })
               }
-              placeholder="000.000.000-00 ou 00.000.000/0000-00"
+              placeholder={
+                documentType === "CPF"
+                  ? "000.000.000-00"
+                  : "00.000.000/0000-00"
+              }
             />
           </div>
 

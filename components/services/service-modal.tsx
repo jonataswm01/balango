@@ -83,7 +83,6 @@ export function ServiceModal({
     date: new Date().toISOString().split("T")[0],
     status: "pendente",
     priority: "media",
-    payment_status: "pendente",
     has_invoice: false,
     gross_value: 0,
     operational_cost: 0,
@@ -124,7 +123,6 @@ export function ServiceModal({
             tax_amount: service.tax_amount,
             has_invoice: service.has_invoice,
             invoice_number: service.invoice_number || "",
-            payment_status: service.payment_status,
             payment_method: service.payment_method || "",
             payment_date: service.payment_date || "",
             location: service.location || "",
@@ -147,7 +145,6 @@ export function ServiceModal({
             date: new Date().toISOString().split("T")[0],
             status: "pendente", // Sempre pendente na criação
             priority: "media", // Valor padrão (não editável no formulário)
-            payment_status: "pendente",
             has_invoice: false,
             gross_value: 0,
             operational_cost: 0,
@@ -255,7 +252,6 @@ export function ServiceModal({
         date: new Date().toISOString().split("T")[0],
         status: "pendente",
         priority: "media",
-        payment_status: "pendente",
         has_invoice: false,
         gross_value: 0,
         operational_cost: 0,
@@ -653,44 +649,21 @@ export function ServiceModal({
 
               {showPayment && (
                 <div className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {/* Status de Pagamento */}
-                    <div className="space-y-2">
-                      <Label htmlFor="payment_status">Status de Pagamento</Label>
-                      <Select
-                        value={formData.payment_status}
-                        onValueChange={(value: any) =>
-                          setFormData({ ...formData, payment_status: value })
-                        }
-                      >
-                        <SelectTrigger id="payment_status">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pendente">Pendente</SelectItem>
-                          <SelectItem value="pago">Pago</SelectItem>
-                          <SelectItem value="parcial">Parcial</SelectItem>
-                          <SelectItem value="cancelado">Cancelado</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Método de Pagamento */}
-                    <div className="space-y-2">
-                      <Label htmlFor="payment_method">Método de Pagamento</Label>
-                      <Input
-                        id="payment_method"
-                        value={formData.payment_method || ""}
-                        onChange={(e) =>
-                          setFormData({ ...formData, payment_method: e.target.value })
-                        }
-                        placeholder="Ex: PIX, Cartão, Boleto..."
-                      />
-                    </div>
+                  {/* Método de Pagamento */}
+                  <div className="space-y-2">
+                    <Label htmlFor="payment_method">Método de Pagamento</Label>
+                    <Input
+                      id="payment_method"
+                      value={formData.payment_method || ""}
+                      onChange={(e) =>
+                        setFormData({ ...formData, payment_method: e.target.value })
+                      }
+                      placeholder="Ex: PIX, Cartão, Boleto..."
+                    />
                   </div>
 
                   {/* Data de Pagamento */}
-                  {formData.payment_status === "pago" && (
+                  {formData.payment_method && (
                     <div className="space-y-2">
                       <Label htmlFor="payment_date">Data de Pagamento</Label>
                       <Input

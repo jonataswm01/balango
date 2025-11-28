@@ -3,8 +3,15 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Technician } from "@/lib/types/database"
-import { Edit, Trash2, UserX, UserCheck } from "lucide-react"
+import { Edit, Trash2, UserX, UserCheck, MoreVertical } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface TechnicianCardProps {
@@ -23,69 +30,66 @@ export function TechnicianCard({
   return (
     <Card className="border-slate-200 hover:shadow-md transition-shadow">
       <CardContent className="p-4">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex-1 space-y-2">
-            {/* Header: Nome e Status */}
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                  {technician.name}
-                </h3>
-                {technician.nickname && (
-                  <p className="text-sm text-slate-500 dark:text-slate-400">
-                    {technician.nickname}
-                  </p>
-                )}
+        <div className="flex items-center gap-4">
+          {/* Grupo de Informações */}
+          <div className="flex-1 space-y-1">
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+              {technician.name}
+            </h3>
+            {technician.nickname && (
+              <p className="hidden lg:block text-sm text-slate-500 dark:text-slate-400">
+                {technician.nickname}
+              </p>
+            )}
+            {technician.phone && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-slate-500 dark:text-slate-400">
+                  Telefone:
+                </span>
+                <span className="text-sm text-slate-700 dark:text-slate-300">
+                  {technician.phone}
+                </span>
               </div>
-              <Badge
-                variant={technician.active ? "default" : "secondary"}
-                className={cn(
-                  technician.active
-                    ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
-                    : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
-                )}
-              >
-                {technician.active ? "Ativo" : "Inativo"}
-              </Badge>
-            </div>
-
-            {/* Informações de Contato */}
-            <div className="space-y-1">
-              {technician.email && (
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-slate-500 dark:text-slate-400">
-                    Email:
-                  </span>
-                  <span className="text-sm text-slate-700 dark:text-slate-300">
-                    {technician.email}
-                  </span>
-                </div>
-              )}
-              {technician.phone && (
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-slate-500 dark:text-slate-400">
-                    Telefone:
-                  </span>
-                  <span className="text-sm text-slate-700 dark:text-slate-300">
-                    {technician.phone}
-                  </span>
-                </div>
-              )}
-              {technician.document && (
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-slate-500 dark:text-slate-400">
-                    CPF:
-                  </span>
-                  <span className="text-sm text-slate-700 dark:text-slate-300">
-                    {technician.document}
-                  </span>
-                </div>
-              )}
-            </div>
+            )}
+            {/* Email e Documento - apenas desktop */}
+            {technician.email && (
+              <div className="hidden lg:flex items-center gap-2">
+                <span className="text-sm text-slate-500 dark:text-slate-400">
+                  Email:
+                </span>
+                <span className="text-sm text-slate-700 dark:text-slate-300">
+                  {technician.email}
+                </span>
+              </div>
+            )}
+            {technician.document && (
+              <div className="hidden lg:flex items-center gap-2">
+                <span className="text-sm text-slate-500 dark:text-slate-400">
+                  CPF:
+                </span>
+                <span className="text-sm text-slate-700 dark:text-slate-300">
+                  {technician.document}
+                </span>
+              </div>
+            )}
           </div>
 
-          {/* Botões de Ação */}
-          <div className="flex flex-col gap-2">
+          {/* Status */}
+          <div className="flex items-center">
+            <Badge
+              variant={technician.active ? "default" : "secondary"}
+              className={cn(
+                technician.active
+                  ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
+                  : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+              )}
+            >
+              {technician.active ? "Ativo" : "Inativo"}
+            </Badge>
+          </div>
+
+          {/* Botões de Ação - Desktop */}
+          <div className="hidden lg:flex flex-col gap-2">
             {onToggleActive && (
               <Button
                 variant="outline"
@@ -128,6 +132,53 @@ export function TechnicianCard({
                 Excluir
               </Button>
             )}
+          </div>
+
+          {/* Menu Hamburger - Mobile/Tablet */}
+          <div className="lg:hidden flex items-center">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 flex items-center justify-center">
+                  <MoreVertical className="h-5 w-5" />
+                  <span className="sr-only">Abrir menu</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {onEdit && (
+                  <DropdownMenuItem onClick={onEdit}>
+                    <Edit className="mr-2 h-4 w-4" />
+                    Editar
+                  </DropdownMenuItem>
+                )}
+                {onToggleActive && (
+                  <DropdownMenuItem onClick={onToggleActive}>
+                    {technician.active ? (
+                      <>
+                        <UserX className="mr-2 h-4 w-4" />
+                        Desativar
+                      </>
+                    ) : (
+                      <>
+                        <UserCheck className="mr-2 h-4 w-4" />
+                        Ativar
+                      </>
+                    )}
+                  </DropdownMenuItem>
+                )}
+                {onDelete && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={onDelete}
+                      className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/20"
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Excluir
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </CardContent>

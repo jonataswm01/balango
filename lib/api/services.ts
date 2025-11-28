@@ -151,7 +151,6 @@ export async function prepareServiceInsert(
 
   // Valores padrão
   prepared.status = prepared.status || 'pendente'
-  prepared.payment_status = prepared.payment_status || 'pendente'
   prepared.priority = prepared.priority || 'media'
   prepared.gross_value = prepared.gross_value || 0
   prepared.operational_cost = prepared.operational_cost || 0
