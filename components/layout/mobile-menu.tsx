@@ -18,6 +18,7 @@ import {
   SheetContent,
   SheetHeader,
   SheetTitle,
+  SheetDescription,
 } from "@/components/ui/sheet"
 
 const navigation = [
@@ -59,8 +60,11 @@ export function MobileMenu({ open, onOpenChange }: MobileMenuProps) {
                 <X className="h-5 w-5 text-slate-600" />
                 <span className="sr-only">Fechar menu</span>
               </button>
-              <SheetTitle className="sr-only">Menu de Navegação</SheetTitle>
             </div>
+            <SheetTitle className="sr-only">Menu de Navegação</SheetTitle>
+            <SheetDescription className="sr-only">
+              Menu de navegação principal do aplicativo
+            </SheetDescription>
           </SheetHeader>
 
           {/* Navegação */}

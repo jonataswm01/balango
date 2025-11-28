@@ -107,49 +107,59 @@ export function MembrosSection() {
         </div>
         <div className="lg:col-span-2">
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-0">
               {loading ? (
                 <div className="flex items-center justify-center py-12">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-0">
                   {members.length === 0 ? (
-                    <p className="text-center text-slate-500 py-8">Nenhum membro encontrado.</p>
+                    <div className="p-6">
+                      <p className="text-center text-slate-500 py-8">Nenhum membro encontrado.</p>
+                    </div>
                   ) : (
                     members.map((member: any) => (
                       <div
                         key={member.id}
-                        className="flex items-center justify-between p-4 border border-slate-200 rounded-lg"
+                        className="w-full border-b border-slate-200 last:border-b-0"
                       >
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold">
-                            {member.nome?.[0]?.toUpperCase() || member.email?.[0]?.toUpperCase() || "U"}
-                          </div>
-                          <div>
-                            <p className="font-medium text-slate-900">{member.nome || "Usuário"}</p>
-                            <p className="text-sm text-slate-500">{member.email}</p>
+                        {/* Card do usuário - ocupa 100% da largura */}
+                        <div className="p-4 bg-slate-50">
+                          <div className="flex items-center gap-3">
+                            <div className="h-12 w-12 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold text-lg flex-shrink-0">
+                              {member.nome?.[0]?.toUpperCase() || member.email?.[0]?.toUpperCase() || "U"}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-slate-900 truncate">{member.nome || "Usuário"}</p>
+                              <p className="text-sm text-slate-500 truncate">{member.email}</p>
+                            </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <select
-                            value={member.role}
-                            onChange={(e) => handleUpdateRole(member.id, e.target.value as 'admin' | 'member')}
-                            className="px-3 py-1.5 border border-slate-300 rounded-md text-sm"
-                            disabled={!isAdmin}
-                          >
-                            <option value="member">Membro</option>
-                            <option value="admin">Admin</option>
-                          </select>
-                          {isAdmin && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleRemoveMember(member.id)}
+                        
+                        {/* Card de ações - ocupa 100% da largura */}
+                        <div className="p-4 bg-white">
+                          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full">
+                            <select
+                              value={member.role}
+                              onChange={(e) => handleUpdateRole(member.id, e.target.value as 'admin' | 'member')}
+                              className="flex-1 px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                              disabled={!isAdmin}
                             >
-                              Remover
-                            </Button>
-                          )}
+                              <option value="member">Membro</option>
+                              <option value="admin">Admin</option>
+                            </select>
+                            {isAdmin && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleRemoveMember(member.id)}
+                                className="w-full sm:w-auto"
+                              >
+                                Remover
+                              </Button>
+                            )}
+                          </div>
                         </div>
                       </div>
                     ))

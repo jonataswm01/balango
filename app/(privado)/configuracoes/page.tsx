@@ -199,6 +199,7 @@ function PerfilSection() {
   const [nome, setNome] = useState("")
   const [telefone, setTelefone] = useState("")
   const [email, setEmail] = useState("")
+  const [emailVerified, setEmailVerified] = useState(false)
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [idioma, setIdioma] = useState("pt-BR")
@@ -220,8 +221,17 @@ function PerfilSection() {
 
           setUser(authUser)
           setEmail(authUser.email || "")
+          setEmailVerified(!!authUser.email_confirmed_at || !!authUser.confirmed_at)
+          
+          // Filtrar telefone inválido (apenas valores que começam com "temp_" ou são muito longos)
+          const telefoneValue = userData?.telefone || ""
+          // Considerar válido se não começar com "temp_" e não for muito longo (provavelmente um ID)
+          const isValidPhone = telefoneValue && 
+            !telefoneValue.startsWith("temp_") && 
+            telefoneValue.length < 50
+          
           setNome(userData?.nome || "")
-          setTelefone(userData?.telefone || "")
+          setTelefone(isValidPhone ? telefoneValue : "")
           setAvatarUrl(userData?.avatar_url || null)
         }
       } catch (error) {
@@ -300,24 +310,33 @@ function PerfilSection() {
                         placeholder="(00) 00000-0000"
                       />
                     </div>
-                    <div>
-                      <Label htmlFor="email" className="text-sm font-medium text-slate-700">
-                        Email
-                      </Label>
-                      <div className="flex gap-2 mt-1.5">
-                        <Input
-                          id="email"
-                          type="email"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          className="flex-1"
-                          placeholder="seu@email.com"
-                        />
+                  <div>
+                    <Label htmlFor="email" className="text-sm font-medium text-slate-700">
+                      Email
+                    </Label>
+                    <div className="flex gap-2 mt-1.5">
+                      <Input
+                        id="email"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="flex-1"
+                        placeholder="seu@email.com"
+                        disabled
+                      />
+                      {!emailVerified && (
                         <Button variant="outline" size="sm">
                           Verificar Email
                         </Button>
-                      </div>
+                      )}
+                      {emailVerified && (
+                        <div className="flex items-center gap-1 px-3 py-1.5 text-sm text-emerald-600 bg-emerald-50 rounded-md border border-emerald-200">
+                          <CheckCircle2 className="h-4 w-4" />
+                          <span>Verificado</span>
+                        </div>
+                      )}
                     </div>
+                  </div>
                     <div className="flex justify-end pt-2">
                       <Button className="bg-emerald-600 hover:bg-emerald-700 text-white">
                         Salvar Alterações
@@ -891,13 +910,25 @@ function ImpostosSection() {
     try {
       setLoading(true)
       const { settingsApi } = await import('@/lib/api/client')
-      const setting = await settingsApi.getByKey('tax_rate')
+      // Usar getByKeySafe que retorna null se não encontrar, sem lançar erro
+      const setting = await settingsApi.getByKeySafe('tax_rate')
+      
       // Converter de decimal (0.15) para porcentagem (15)
-      setTaxRatePercent((setting.value || 0) * 100)
+      if (setting && setting.value !== null && setting.value !== undefined) {
+        setTaxRatePercent(setting.value * 100)
+      } else {
+        // Taxa não configurada ainda, usar 0 como padrão
+        setTaxRatePercent(0)
+      }
     } catch (error: any) {
-      // Se não encontrar, mantém 0
+      // Apenas erros inesperados chegam aqui (não 404)
+      console.error('Erro ao carregar taxa de imposto:', error)
       setTaxRatePercent(0)
-      console.log('Taxa de imposto não configurada, usando padrão: 0')
+      toast({
+        variant: "destructive",
+        title: "Erro ao carregar",
+        description: "Não foi possível carregar a taxa de imposto. Tente novamente.",
+      })
     } finally {
       setLoading(false)
     }
@@ -924,6 +955,9 @@ function ImpostosSection() {
         title: "Configuração salva!",
         description: `Taxa de imposto de ${taxRatePercent.toFixed(2)}% foi salva com sucesso.`,
       })
+      
+      // Atualizar o estado diretamente (já temos o valor correto)
+      // Não precisa recarregar, evitando erro 404 desnecessário
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -956,56 +990,75 @@ function ImpostosSection() {
           <Card>
             <CardContent className="p-8">
               <div className="w-full max-w-md mx-auto space-y-6">
-                {loading ? (
-                  <div className="flex items-center justify-center py-12">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                  </div>
-                ) : (
-                  <>
-                    <div>
-                      <Label htmlFor="tax-rate" className="text-sm font-medium text-slate-700 mb-1.5 block">
-                        Taxa de Imposto (%)
-                      </Label>
-                      <p className="text-xs text-slate-500 mb-3">
-                        Digite o valor em porcentagem. Exemplo: 15 para 15%, 18 para 18%
-                      </p>
-                      <div className="relative">
-                        <Input
-                          id="tax-rate"
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          max="100"
-                          value={taxRatePercent}
-                          onChange={(e) => setTaxRatePercent(parseFloat(e.target.value) || 0)}
-                          disabled={saving}
-                          className="text-lg pr-8"
-                          placeholder="15"
-                        />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-lg">
-                          %
-                        </span>
+                <div>
+                  <Label htmlFor="tax-rate" className="text-sm font-medium text-slate-700 mb-1.5 block">
+                    Taxa de Imposto (%)
+                  </Label>
+                  <p className="text-xs text-slate-500 mb-3">
+                    Digite o valor em porcentagem. Exemplo: 15 para 15%, 18 para 18%
+                  </p>
+                  
+                  {/* Mostrar taxa atual mesmo durante loading */}
+                  {loading && (
+                    <div className="mb-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                      <div className="flex items-center gap-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                        <p className="text-sm text-slate-600">Carregando taxa atual...</p>
                       </div>
-                      <p className="text-sm text-slate-500 mt-2">
-                        Taxa atual: <span className="font-semibold text-slate-900">{taxRatePercent.toFixed(2)}%</span>
+                    </div>
+                  )}
+                  
+                  {!loading && (
+                    <div className="mb-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                      <p className="text-xs text-blue-600 font-medium mb-1">Taxa Atual Configurada</p>
+                      <p className="text-2xl font-bold text-blue-900">
+                        {taxRatePercent > 0 ? `${taxRatePercent.toFixed(2)}%` : '0% (não configurada)'}
                       </p>
-                      {taxRatePercent > 0 && (
-                        <p className="text-xs text-emerald-600 mt-1 flex items-center gap-1">
-                          <CheckCircle2 className="h-3 w-3" />
-                          Esta taxa será aplicada automaticamente aos serviços com nota fiscal
-                        </p>
-                      )}
                     </div>
-                    <div className="flex justify-end pt-2">
-                      <Button 
-                        onClick={handleSave}
-                        disabled={saving || taxRatePercent < 0 || taxRatePercent > 100}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                      >
-                        {saving ? "Salvando..." : "Salvar Configuração"}
-                      </Button>
-                    </div>
-                  </>
+                  )}
+                  
+                  <div className="relative">
+                    <Input
+                      id="tax-rate"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="100"
+                      value={loading ? '' : taxRatePercent}
+                      onChange={(e) => setTaxRatePercent(parseFloat(e.target.value) || 0)}
+                      disabled={saving || loading}
+                      className="text-lg pr-8"
+                      placeholder={loading ? "Carregando..." : "15"}
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-lg">
+                      %
+                    </span>
+                  </div>
+                  
+                  {!loading && taxRatePercent > 0 && (
+                    <p className="text-xs text-emerald-600 mt-2 flex items-center gap-1">
+                      <CheckCircle2 className="h-3 w-3" />
+                      Esta taxa será aplicada automaticamente aos serviços com nota fiscal
+                    </p>
+                  )}
+                  
+                  {!loading && taxRatePercent === 0 && (
+                    <p className="text-xs text-amber-600 mt-2 flex items-center gap-1">
+                      ⚠️ Nenhuma taxa configurada. Configure uma taxa para aplicar automaticamente aos serviços com nota fiscal.
+                    </p>
+                  )}
+                </div>
+                
+                {!loading && (
+                  <div className="flex justify-end pt-2">
+                    <Button 
+                      onClick={handleSave}
+                      disabled={saving || taxRatePercent < 0 || taxRatePercent > 100}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                    >
+                      {saving ? "Salvando..." : "Salvar Configuração"}
+                    </Button>
+                  </div>
                 )}
               </div>
             </CardContent>

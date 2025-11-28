@@ -8,6 +8,7 @@ import {
   SheetContent,
   SheetHeader,
   SheetTitle,
+  SheetDescription,
 } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
@@ -86,6 +87,9 @@ export function MobileSettingsMenu({
                 <span className="sr-only">Fechar menu</span>
               </button>
             </div>
+            <SheetDescription className="sr-only">
+              Menu de configurações e preferências
+            </SheetDescription>
           </SheetHeader>
 
           {/* Navegação */}

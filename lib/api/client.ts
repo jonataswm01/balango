@@ -36,11 +36,22 @@ async function request<T>(
     credentials: 'include', // Inclui cookies para autenticação
   })
 
+  // Se for 404, retornar erro especial sem tentar parse do JSON
+  if (response.status === 404) {
+    const errorWithStatus = new Error('Not Found') as Error & { status?: number }
+    errorWithStatus.status = 404
+    throw errorWithStatus
+  }
+
   const data = await response.json()
 
   if (!response.ok) {
     const error: ApiError = data
-    throw new Error(error.error || error.details || 'Erro na requisição')
+    // Incluir status code na mensagem de erro para facilitar tratamento
+    const errorMessage = error.error || error.details || 'Erro na requisição'
+    const errorWithStatus = new Error(errorMessage) as Error & { status?: number }
+    errorWithStatus.status = response.status
+    throw errorWithStatus
   }
 
   return data as T
@@ -285,6 +296,22 @@ export const settingsApi = {
    */
   async getByKey(key: string): Promise<{ key: string; value: number; description?: string | null }> {
     return request(`/settings/${key}`)
+  },
+
+  /**
+   * Busca uma configuração específica, retorna null se não encontrar (sem lançar erro)
+   */
+  async getByKeySafe(key: string): Promise<{ key: string; value: number; description?: string | null } | null> {
+    try {
+      return await request(`/settings/${key}`)
+    } catch (error: any) {
+      // Se for 404, retorna null em vez de lançar erro
+      if (error?.status === 404 || error?.message === 'Not Found') {
+        return null
+      }
+      // Para outros erros, relança
+      throw error
+    }
   },
 
   /**
