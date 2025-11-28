@@ -29,7 +29,7 @@ export default function PrivateLayout({
       <OrganizationProvider>
         <div className="min-h-screen flex">
           <Sidebar />
-          <div className="flex-1 flex flex-col lg:ml-20">
+          <div className="flex-1 flex flex-col lg:ml-20 w-full">
             {!isConfiguracoes && <Header />}
             <main className="flex-1 bg-slate-50 dark:bg-slate-900">{children}</main>
           </div>

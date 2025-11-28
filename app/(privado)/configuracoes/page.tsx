@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, User, Lock, Bell, CreditCard, Users, Eye, EyeOff, Lock as LockIcon, Mail, Phone, Camera, Globe, Moon, Sun, Monitor, Search, MoreVertical, CheckCircle2, Cog } from "lucide-react"
+import { ArrowLeft, User, Lock, Bell, CreditCard, Users, Eye, EyeOff, Lock as LockIcon, Mail, Phone, Camera, Globe, Moon, Sun, Monitor, Search, MoreVertical, CheckCircle2, Cog, Menu } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils"
 import { createClient } from "@/lib/supabase/client"
 import { useToast } from "@/components/ui/use-toast"
 import { MembrosSection } from "@/components/settings/membros-section"
+import { MobileSettingsMenu } from "@/components/settings/mobile-settings-menu"
 
 type SettingsSection = "perfil" | "seguranca" | "notificacoes" | "faturamento" | "membros" | "impostos"
 
@@ -42,6 +43,23 @@ const settingsSections = [
 export default function ConfiguracoesPage() {
   const router = useRouter()
   const [activeSection, setActiveSection] = useState<SettingsSection>("perfil")
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
+  // Abrir menu automaticamente em mobile quando entrar na página
+  useEffect(() => {
+    const checkMobile = () => {
+      if (window.innerWidth < 1024) {
+        setMobileMenuOpen(true)
+      }
+    }
+    
+    // Verificar no mount
+    checkMobile()
+    
+    // Opcional: também verificar em resize (mas só abrir se ainda não foi fechado manualmente)
+    // window.addEventListener('resize', checkMobile)
+    // return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   const getSectionInfo = () => {
     for (const section of settingsSections) {
@@ -59,100 +77,157 @@ export default function ConfiguracoesPage() {
   const sectionInfo = getSectionInfo()
 
   return (
-    <div className="flex h-screen">
-      {/* Sidebar Secundária */}
-      <div className="w-64 border-r border-slate-200 bg-white flex flex-col">
-        {/* Header da Sidebar */}
-        <div className="p-4 border-b border-slate-200">
-          <Button
-            variant="ghost"
-            onClick={() => router.push("/dashboard")}
-            className="w-full justify-start text-slate-600 hover:text-slate-900 hover:bg-slate-100"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Voltar
-          </Button>
-          <h2 className="mt-4 text-lg font-semibold text-slate-900">Configurações</h2>
-        </div>
+    <>
+      <div className="flex h-screen">
+        {/* Sidebar Secundária - Desktop */}
+        <div className="hidden lg:flex w-64 border-r border-slate-200 bg-white flex-col">
+          {/* Header da Sidebar */}
+          <div className="p-4 border-b border-slate-200">
+            <Button
+              variant="ghost"
+              onClick={() => router.push("/dashboard")}
+              className="w-full justify-start text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Voltar
+            </Button>
+            <h2 className="mt-4 text-lg font-semibold text-slate-900">Configurações</h2>
+          </div>
 
-        {/* Navegação */}
-        <nav className="flex-1 overflow-y-auto p-4">
-          {settingsSections.map((section, sectionIndex) => (
-            <div key={section.category} className={cn(sectionIndex > 0 && "mt-8")}>
-              <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
-                {section.category}
-              </h3>
-              <div className="space-y-1">
-                {section.items.map((item) => {
-                  const Icon = item.icon
-                  const isActive = activeSection === item.id
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => setActiveSection(item.id)}
-                      className={cn(
-                        "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                        isActive
-                          ? "bg-blue-50 text-blue-600"
-                          : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                      )}
-                    >
-                      <Icon className="h-5 w-5" />
-                      {item.label}
-                    </button>
-                  )
-                })}
+          {/* Navegação */}
+          <nav className="flex-1 overflow-y-auto p-4">
+            {settingsSections.map((section, sectionIndex) => (
+              <div key={section.category} className={cn(sectionIndex > 0 && "mt-8")}>
+                <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
+                  {section.category}
+                </h3>
+                <div className="space-y-1">
+                  {section.items.map((item) => {
+                    const Icon = item.icon
+                    const isActive = activeSection === item.id
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => setActiveSection(item.id)}
+                        className={cn(
+                          "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                          isActive
+                            ? "bg-blue-50 text-blue-600"
+                            : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                        )}
+                      >
+                        <Icon className="h-5 w-5" />
+                        {item.label}
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
-            </div>
-          ))}
-        </nav>
-      </div>
+            ))}
+          </nav>
+        </div>
 
-      {/* Conteúdo Principal */}
-      <div className="flex-1 overflow-y-auto bg-slate-50">
-        <div className="max-w-4xl mx-auto p-6">
-          {/* Breadcrumbs */}
-          <div className="mb-6">
-            <nav className="text-sm text-slate-500">
-              <span>{sectionInfo.category}</span>
-              <span className="mx-2">/</span>
-              <span className="text-slate-900 font-medium">{sectionInfo.title}</span>
-            </nav>
+        {/* Conteúdo Principal */}
+        <div className="flex-1 overflow-y-auto bg-slate-50">
+          {/* Header Mobile */}
+          <div className="lg:hidden sticky top-0 z-30 bg-white border-b border-slate-200 px-4 py-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setMobileMenuOpen(true)}
+                  className="h-9 w-9"
+                >
+                  <Menu className="h-5 w-5 text-slate-600" />
+                </Button>
+                <div>
+                  <h2 className="text-lg font-semibold text-slate-900">Configurações</h2>
+                  <p className="text-xs text-slate-500">{sectionInfo.title}</p>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => router.push("/dashboard")}
+                className="h-9 w-9"
+              >
+                <ArrowLeft className="h-5 w-5 text-slate-600" />
+              </Button>
+            </div>
           </div>
 
-          {/* Conteúdo da Seção Ativa */}
-          <div className="space-y-8">
-            {activeSection === "perfil" && <PerfilSection />}
-            {activeSection === "seguranca" && <SegurancaSection />}
-            {activeSection === "notificacoes" && <NotificacoesSection />}
-            {activeSection === "faturamento" && <FaturamentoSection />}
-            {activeSection === "membros" && <MembrosSection />}
-            {activeSection === "impostos" && <ImpostosSection />}
+          <div className="max-w-4xl mx-auto p-4 lg:p-6">
+            {/* Breadcrumbs - Desktop */}
+            <div className="hidden lg:block mb-6">
+              <nav className="text-sm text-slate-500">
+                <span>{sectionInfo.category}</span>
+                <span className="mx-2">/</span>
+                <span className="text-slate-900 font-medium">{sectionInfo.title}</span>
+              </nav>
+            </div>
+
+            {/* Conteúdo da Seção Ativa */}
+            <div className="space-y-8">
+              {activeSection === "perfil" && <PerfilSection />}
+              {activeSection === "seguranca" && <SegurancaSection />}
+              {activeSection === "notificacoes" && <NotificacoesSection />}
+              {activeSection === "faturamento" && <FaturamentoSection />}
+              {activeSection === "membros" && <MembrosSection />}
+              {activeSection === "impostos" && <ImpostosSection />}
+            </div>
           </div>
         </div>
       </div>
-    </div>
+
+      {/* Menu Mobile */}
+      <MobileSettingsMenu
+        open={mobileMenuOpen}
+        onOpenChange={setMobileMenuOpen}
+        activeSection={activeSection}
+        onSectionChange={setActiveSection}
+      />
+    </>
   )
 }
 
 // Componente: Seção Perfil
 function PerfilSection() {
   const supabase = createClient()
+  const { toast } = useToast()
   const [user, setUser] = useState<any>(null)
   const [nome, setNome] = useState("")
   const [telefone, setTelefone] = useState("")
   const [email, setEmail] = useState("")
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
   const [idioma, setIdioma] = useState("pt-BR")
   const [tema, setTema] = useState("light")
 
   useEffect(() => {
     const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        setUser(user)
-        setEmail(user.email || "")
-        setNome(user.user_metadata?.nome || "")
-        setTelefone(user.user_metadata?.telefone || "")
+      try {
+        setLoading(true)
+        const { data: { user: authUser } } = await supabase.auth.getUser()
+        
+        if (authUser) {
+          // Buscar dados do perfil da tabela users
+          const { data: userData } = await supabase
+            .from("users")
+            .select("nome, telefone, avatar_url")
+            .eq("id", authUser.id)
+            .single()
+
+          setUser(authUser)
+          setEmail(authUser.email || "")
+          setNome(userData?.nome || "")
+          setTelefone(userData?.telefone || "")
+          setAvatarUrl(userData?.avatar_url || null)
+        }
+      } catch (error) {
+        console.error("Erro ao buscar usuário:", error)
+      } finally {
+        setLoading(false)
       }
     }
     getUser()
@@ -168,7 +243,7 @@ function PerfilSection() {
   return (
     <>
       {/* Detalhes pessoais */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         <div className="lg:col-span-1">
           <h1 className="text-xl font-semibold text-slate-900 mb-2">Informações Pessoais</h1>
           <p className="text-sm text-slate-600">
@@ -177,69 +252,79 @@ function PerfilSection() {
         </div>
         <div className="lg:col-span-2">
           <Card>
-            <CardContent className="p-8 flex items-center justify-center min-h-[500px]">
+            <CardContent className="p-4 lg:p-8 flex items-center justify-center min-h-[400px] lg:min-h-[500px]">
               <div className="w-full max-w-md mx-auto space-y-6">
-                <div className="flex flex-col items-center">
-                  <Avatar className="h-24 w-24 mb-4">
-                    <AvatarImage src={user?.user_metadata?.avatar_url} />
-                    <AvatarFallback className="bg-slate-200 text-slate-700 text-2xl font-semibold">
-                      {getUserInitials()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <Button variant="outline" size="sm" className="gap-2">
-                    <Camera className="h-4 w-4" />
-                    Alterar Foto
-                  </Button>
-                </div>
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="nome" className="text-sm font-medium text-slate-700">
-                      Nome Completo *
-                    </Label>
-                    <Input
-                      id="nome"
-                      value={nome}
-                      onChange={(e) => setNome(e.target.value)}
-                      className="mt-1.5"
-                      placeholder="Seu nome completo"
-                    />
+                {loading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                   </div>
-                  <div>
-                    <Label htmlFor="telefone" className="text-sm font-medium text-slate-700">
-                      Telefone
-                    </Label>
-                    <Input
-                      id="telefone"
-                      value={telefone}
-                      onChange={(e) => setTelefone(e.target.value)}
-                      className="mt-1.5"
-                      placeholder="(00) 00000-0000"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="email" className="text-sm font-medium text-slate-700">
-                      Email
-                    </Label>
-                    <div className="flex gap-2 mt-1.5">
+                ) : (
+                  <>
+                    <div className="flex flex-col items-center">
+                      <Avatar className="h-24 w-24 mb-4">
+                        <AvatarImage src={avatarUrl || undefined} />
+                        <AvatarFallback className="bg-slate-200 text-slate-700 text-2xl font-semibold">
+                          {getUserInitials()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <Button variant="outline" size="sm" className="gap-2">
+                        <Camera className="h-4 w-4" />
+                        Alterar Foto
+                      </Button>
+                    </div>
+                  </>
+                )}
+                {!loading && (
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="nome" className="text-sm font-medium text-slate-700">
+                        Nome Completo *
+                      </Label>
                       <Input
-                        id="email"
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="flex-1"
-                        placeholder="seu@email.com"
+                        id="nome"
+                        value={nome}
+                        onChange={(e) => setNome(e.target.value)}
+                        className="mt-1.5"
+                        placeholder="Seu nome completo"
                       />
-                      <Button variant="outline" size="sm">
-                        Verificar Email
+                    </div>
+                    <div>
+                      <Label htmlFor="telefone" className="text-sm font-medium text-slate-700">
+                        Telefone
+                      </Label>
+                      <Input
+                        id="telefone"
+                        value={telefone}
+                        onChange={(e) => setTelefone(e.target.value)}
+                        className="mt-1.5"
+                        placeholder="(00) 00000-0000"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="email" className="text-sm font-medium text-slate-700">
+                        Email
+                      </Label>
+                      <div className="flex gap-2 mt-1.5">
+                        <Input
+                          id="email"
+                          type="email"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          className="flex-1"
+                          placeholder="seu@email.com"
+                        />
+                        <Button variant="outline" size="sm">
+                          Verificar Email
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="flex justify-end pt-2">
+                      <Button className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                        Salvar Alterações
                       </Button>
                     </div>
                   </div>
-                  <div className="flex justify-end pt-2">
-                    <Button className="bg-emerald-600 hover:bg-emerald-700 text-white">
-                      Salvar Alterações
-                    </Button>
-                  </div>
-                </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -247,7 +332,7 @@ function PerfilSection() {
       </div>
 
       {/* Preferências */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         <div className="lg:col-span-1">
           <h2 className="text-xl font-semibold text-slate-900 mb-2">Preferências</h2>
           <p className="text-sm text-slate-600">
@@ -256,7 +341,7 @@ function PerfilSection() {
         </div>
         <div className="lg:col-span-2">
           <Card>
-            <CardContent className="p-8 flex items-center justify-center min-h-[500px]">
+            <CardContent className="p-4 lg:p-8 flex items-center justify-center min-h-[400px] lg:min-h-[500px]">
               <div className="w-full max-w-md mx-auto space-y-6">
                 <div>
                   <Label className="text-sm font-medium text-slate-700 mb-1.5 block">
@@ -268,12 +353,14 @@ function PerfilSection() {
                   <select
                     value={idioma}
                     onChange={(e) => setIdioma(e.target.value)}
-                    className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                    disabled
+                    className="flex h-10 w-full rounded-md border border-slate-300 bg-slate-100 px-3 py-2 text-sm text-slate-500 cursor-not-allowed opacity-60"
                   >
                     <option value="pt-BR">BR Português (Brasil)</option>
                     <option value="en-US">English (United States)</option>
                     <option value="es-ES">Español (España)</option>
                   </select>
+                  <p className="text-xs text-slate-400 mt-1 italic">Funcionalidade em desenvolvimento</p>
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-slate-700 mb-1.5 block">
@@ -294,35 +381,37 @@ function PerfilSection() {
                         <button
                           key={option.id}
                           onClick={() => setTema(option.id)}
+                          disabled
                           className={cn(
-                            "relative p-4 rounded-lg border-2 transition-all",
+                            "relative p-4 rounded-lg border-2 transition-all opacity-60 cursor-not-allowed",
                             isSelected
-                              ? "border-blue-500 bg-blue-50"
-                              : "border-slate-200 hover:border-slate-300"
+                              ? "border-slate-300 bg-slate-100"
+                              : "border-slate-200 bg-slate-50"
                           )}
                         >
                           {isSelected && (
-                            <CheckCircle2 className="absolute top-2 right-2 h-5 w-5 text-blue-600" />
+                            <CheckCircle2 className="absolute top-2 right-2 h-5 w-5 text-slate-400" />
                           )}
                           <div className={cn(
-                            "flex items-center justify-center h-12 rounded mb-2",
+                            "flex items-center justify-center h-12 rounded mb-2 opacity-50",
                             option.id === "light" ? "bg-white text-slate-900" :
                             option.id === "dark" ? "bg-slate-900 text-white" :
                             "bg-gradient-to-r from-white to-slate-900 text-slate-900"
                           )}>
                             <span className="text-lg font-semibold">Aa</span>
                           </div>
-                          <p className="text-sm font-medium text-slate-700">{option.label}</p>
+                          <p className="text-sm font-medium text-slate-500">{option.label}</p>
                         </button>
                       )
                     })}
                   </div>
                 </div>
                 <div className="flex justify-end pt-2">
-                  <Button className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                  <Button disabled className="bg-slate-300 text-slate-500 cursor-not-allowed">
                     Salvar Alterações
                   </Button>
                 </div>
+                <p className="text-xs text-slate-400 italic text-center">Funcionalidade em desenvolvimento</p>
               </div>
             </CardContent>
           </Card>
@@ -330,7 +419,7 @@ function PerfilSection() {
       </div>
 
       {/* Zona de perigo */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         <div className="lg:col-span-1">
           <h2 className="text-xl font-semibold text-slate-900 mb-2">Zona de Perigo</h2>
           <p className="text-sm text-slate-600">
@@ -373,7 +462,7 @@ function SegurancaSection() {
       </div>
 
       {/* Alterar senha */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         <div className="lg:col-span-1">
           <h2 className="text-xl font-semibold text-slate-900 mb-2">Alterar Senha</h2>
           <p className="text-sm text-slate-600">
@@ -382,7 +471,7 @@ function SegurancaSection() {
         </div>
         <div className="lg:col-span-2">
           <Card>
-            <CardContent className="p-8 flex items-center justify-center min-h-[500px]">
+            <CardContent className="p-4 lg:p-8 flex items-center justify-center min-h-[400px] lg:min-h-[500px]">
               <div className="w-full max-w-md mx-auto space-y-4">
                 <div>
                   <Label htmlFor="current-password" className="text-sm font-medium text-slate-700 flex items-center gap-2">
@@ -471,7 +560,7 @@ function SegurancaSection() {
       </div>
 
       {/* Contas conectadas */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         <div className="lg:col-span-1">
           <h2 className="text-xl font-semibold text-slate-900 mb-2">Contas conectadas</h2>
           <p className="text-sm text-slate-600">
@@ -479,24 +568,24 @@ function SegurancaSection() {
           </p>
         </div>
         <div className="lg:col-span-2">
-          <Card>
-            <CardContent className="p-8 flex items-center justify-center min-h-[500px]">
+          <Card className="opacity-60">
+            <CardContent className="p-4 lg:p-8 flex items-center justify-center min-h-[400px] lg:min-h-[500px]">
               <div className="w-full max-w-md mx-auto space-y-4">
-                <div className="flex items-center justify-between p-4 border border-slate-200 rounded-lg">
+                <div className="flex items-center justify-between p-4 border border-slate-200 rounded-lg opacity-60">
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold">
                       G
                     </div>
                     <div>
-                      <p className="font-medium text-slate-900">Google</p>
-                      <p className="text-sm text-slate-500">Not connected</p>
+                      <p className="font-medium text-slate-500">Google</p>
+                      <p className="text-sm text-slate-400">Not connected</p>
                     </div>
                   </div>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" disabled className="cursor-not-allowed">
                     Connect
                   </Button>
                 </div>
-                <div className="flex items-center justify-between p-4 border border-slate-200 rounded-lg">
+                <div className="flex items-center justify-between p-4 border border-slate-200 rounded-lg opacity-60">
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded flex items-center justify-center bg-slate-900">
                       <div className="grid grid-cols-2 gap-0.5">
@@ -507,18 +596,18 @@ function SegurancaSection() {
                       </div>
                     </div>
                     <div>
-                      <p className="font-medium text-slate-900">Microsoft</p>
-                      <p className="text-sm text-slate-500">Not connected</p>
+                      <p className="font-medium text-slate-500">Microsoft</p>
+                      <p className="text-sm text-slate-400">Not connected</p>
                     </div>
                   </div>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" disabled className="cursor-not-allowed">
                     Connect
                   </Button>
                 </div>
                 <div className="flex items-start gap-2 p-3 bg-slate-50 rounded-lg">
-                  <span className="text-slate-500 text-sm">ℹ️</span>
-                  <p className="text-xs text-slate-600">
-                    Regardless of connected accounts, you will always have a password login as well.
+                  <span className="text-slate-400 text-sm">ℹ️</span>
+                  <p className="text-xs text-slate-500 italic">
+                    Funcionalidade em desenvolvimento
                   </p>
                 </div>
               </div>
@@ -528,7 +617,7 @@ function SegurancaSection() {
       </div>
 
       {/* 2FA */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         <div className="lg:col-span-1">
           <h2 className="text-xl font-semibold text-slate-900 mb-2">Autenticação de dois fatores</h2>
           <p className="text-sm text-slate-600">
@@ -537,7 +626,7 @@ function SegurancaSection() {
         </div>
         <div className="lg:col-span-2">
           <Card>
-            <CardContent className="p-8 flex items-center justify-center min-h-[500px]">
+            <CardContent className="p-4 lg:p-6">
               <div className="w-full max-w-md mx-auto">
                 <div className="flex items-center justify-between">
                   <div>
@@ -555,7 +644,7 @@ function SegurancaSection() {
       </div>
 
       {/* Sessões */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         <div className="lg:col-span-1">
           <h2 className="text-xl font-semibold text-slate-900 mb-2">Gerenciar sessões</h2>
           <p className="text-sm text-slate-600">
@@ -564,7 +653,7 @@ function SegurancaSection() {
         </div>
         <div className="lg:col-span-2">
           <Card>
-            <CardContent className="p-8 flex items-center justify-center min-h-[500px]">
+            <CardContent className="p-4 lg:p-6">
               <div className="w-full max-w-md mx-auto space-y-4">
                 <div className="flex items-center justify-between p-4 border border-slate-200 rounded-lg">
                   <div className="flex items-center gap-3">
@@ -610,7 +699,7 @@ function NotificacoesSection() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         <div className="lg:col-span-1">
           <h2 className="text-xl font-semibold text-slate-900 mb-2">Preferências de Notificação</h2>
           <p className="text-sm text-slate-600">
@@ -619,7 +708,7 @@ function NotificacoesSection() {
         </div>
         <div className="lg:col-span-2">
           <Card>
-            <CardContent className="p-8 flex items-center justify-center min-h-[500px]">
+            <CardContent className="p-4 lg:p-8 flex items-center justify-center min-h-[400px] lg:min-h-[500px]">
               <div className="w-full max-w-md mx-auto text-center">
                 <p className="text-sm text-slate-500">
                   Em desenvolvimento. Em breve disponível.
@@ -644,7 +733,7 @@ function FaturamentoSection() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         <div className="lg:col-span-1">
           <h2 className="text-xl font-semibold text-slate-900 mb-2">Plano</h2>
           <p className="text-sm text-slate-600">
@@ -653,7 +742,7 @@ function FaturamentoSection() {
         </div>
         <div className="lg:col-span-2">
           <Card>
-            <CardContent className="p-8 flex items-center justify-center min-h-[500px]">
+            <CardContent className="p-4 lg:p-6">
               <div className="w-full max-w-md mx-auto text-center space-y-4">
                 <p className="text-sm text-slate-600">
                   Esta organização está atualmente no plano: <span className="font-semibold text-slate-900">Free</span>
@@ -665,7 +754,7 @@ function FaturamentoSection() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         <div className="lg:col-span-1">
           <h2 className="text-xl font-semibold text-slate-900 mb-2">E-mail destinatário</h2>
           <p className="text-sm text-slate-600">
@@ -674,7 +763,7 @@ function FaturamentoSection() {
         </div>
         <div className="lg:col-span-2">
           <Card>
-            <CardContent className="p-8 flex items-center justify-center min-h-[500px]">
+            <CardContent className="p-4 lg:p-8 flex items-center justify-center min-h-[400px] lg:min-h-[500px]">
               <div className="w-full max-w-md mx-auto space-y-4">
                 <div>
                   <Label htmlFor="billing-email" className="text-sm font-medium text-slate-700">
@@ -698,7 +787,7 @@ function FaturamentoSection() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         <div className="lg:col-span-1">
           <h2 className="text-xl font-semibold text-slate-900 mb-2">Endereço de faturamento</h2>
           <p className="text-sm text-slate-600">
@@ -707,7 +796,7 @@ function FaturamentoSection() {
         </div>
         <div className="lg:col-span-2">
           <Card>
-            <CardContent className="p-8 flex items-center justify-center min-h-[500px]">
+            <CardContent className="p-4 lg:p-8 flex items-center justify-center min-h-[400px] lg:min-h-[500px]">
               <div className="w-full max-w-md mx-auto space-y-4">
                 <div>
                   <Label htmlFor="address-line-1" className="text-sm font-medium text-slate-700">
@@ -766,7 +855,7 @@ function FaturamentoSection() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         <div className="lg:col-span-1">
           <h2 className="text-xl font-semibold text-slate-900 mb-2">Faturas</h2>
           <p className="text-sm text-slate-600">
@@ -775,7 +864,7 @@ function FaturamentoSection() {
         </div>
         <div className="lg:col-span-2">
           <Card>
-            <CardContent className="p-8 flex items-center justify-center min-h-[500px]">
+            <CardContent className="p-4 lg:p-6">
               <div className="w-full max-w-md mx-auto text-center">
                 <p className="text-sm text-slate-500">Nenhuma fatura recebida ainda.</p>
               </div>
@@ -856,7 +945,7 @@ function ImpostosSection() {
       </div>
 
       {/* Taxa de Imposto */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         <div className="lg:col-span-1">
           <h2 className="text-xl font-semibold text-slate-900 mb-2">Taxa de Imposto</h2>
           <p className="text-sm text-slate-600">

@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
-import { Bell, HelpCircle, Settings, LogOut, ChevronDown } from "lucide-react"
+import { Bell, HelpCircle, Settings, LogOut, ChevronDown, Menu } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -15,12 +15,14 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { createClient } from "@/lib/supabase/client"
+import { MobileMenu } from "@/components/layout/mobile-menu"
 
 export function Header() {
   const pathname = usePathname()
   const router = useRouter()
   const [user, setUser] = useState<{ id: string; email?: string; nome?: string; avatar_url?: string } | null>(null)
   const [loading, setLoading] = useState(true)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const supabase = createClient()
 
   // Buscar dados do usuário
@@ -85,10 +87,21 @@ export function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
-      <div className="flex h-16 items-center justify-end px-6">
-        {/* Ações do Header */}
-        <div className="flex items-center gap-3">
+    <>
+      <header className="sticky top-0 z-40 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+        <div className="flex h-16 items-center justify-between px-4 lg:justify-end lg:px-6">
+          {/* Botão Hamburger - Mobile */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="lg:hidden"
+            onClick={() => setMobileMenuOpen(true)}
+          >
+            <Menu className="h-6 w-6 text-slate-600" />
+          </Button>
+
+          {/* Ações do Header */}
+          <div className="flex items-center gap-3">
           {/* Notificações */}
           <Button variant="ghost" size="icon" className="relative">
             <Bell className="h-5 w-5 text-slate-600" />
@@ -148,9 +161,13 @@ export function Header() {
               </DropdownMenuContent>
             </DropdownMenu>
           )}
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
+
+    {/* Menu Mobile */}
+    <MobileMenu open={mobileMenuOpen} onOpenChange={setMobileMenuOpen} />
+    </>
   )
 }
 

@@ -91,9 +91,11 @@ export default function OnboardingPage() {
           .eq("id", user.id)
           .maybeSingle()
 
-        // Se não encontrou o usuário, não criar ainda (precisa de organization_id que será criado no onboarding)
+        // Se não encontrou o usuário, isso é um problema (deveria ter sido criado no cadastro)
+        // Mas permitimos continuar para que o usuário possa completar o onboarding
+        // O erro será tratado no handleFinish
         if (profileError && profileError.code === 'PGRST116') {
-          console.log("[Onboarding] Usuário não encontrado na tabela users. Será criado ao finalizar onboarding.")
+          console.warn("[Onboarding] Usuário não encontrado na tabela users. O trigger handle_new_user() pode ter falhado.")
           setChecking(false)
           return
         }
@@ -571,22 +573,48 @@ export default function OnboardingPage() {
         return
       }
 
-      // Atualizar ou criar usuário (usar upsert para garantir que existe)
+      // Atualizar usuário existente (usuário já foi criado no /cadastro)
       const telefoneLimpo = telefone.replace(/\D/g, "")
       
-      // Primeiro verificar se o usuário existe
-      const { data: existingUser } = await supabase
+      // Verificar se o usuário existe na tabela users
+      const { data: existingUser, error: checkError } = await supabase
         .from("users")
         .select("id")
         .eq("id", user.id)
         .maybeSingle()
 
-      // Preparar dados do usuário
+      if (checkError && checkError.code !== 'PGRST116') {
+        // PGRST116 = não encontrado, mas outros erros são problemas
+        console.error("Erro ao verificar usuário:", checkError)
+        toast({
+          variant: "destructive",
+          title: "Erro ao verificar dados",
+          description: "Erro ao verificar seu perfil. Tente novamente.",
+        })
+        setLoading(false)
+        return
+      }
+
+      if (!existingUser) {
+        // Usuário não existe na tabela users - isso não deveria acontecer
+        // O trigger handle_new_user() deveria ter criado o registro no cadastro
+        console.error("❌ Usuário não encontrado na tabela users. O trigger handle_new_user() pode ter falhado.")
+        toast({
+          variant: "destructive",
+          title: "Erro no perfil",
+          description: "Seu perfil não foi encontrado. Por favor, faça logout e cadastre-se novamente.",
+        })
+        setLoading(false)
+        return
+      }
+
+      // Preparar dados do usuário para atualização
       const userData: any = {
-        id: user.id,
-        email: user.email || '',
         nome: nome.trim(),
         telefone: telefoneLimpo,
+        organization_id: organization.id,
+        role: "admin",
+        active: true,
       }
 
       // Adicionar campos opcionais
@@ -594,30 +622,14 @@ export default function OnboardingPage() {
         userData.avatar_url = fotoUrl
       }
 
-      // Campos da organização (sempre adicionar após criar organização)
-      userData.organization_id = organization.id
-      userData.role = "admin"
-      userData.active = true
-
-      let userUpdateError = null
-      
-      if (existingUser) {
-        // Atualizar usuário existente
-        const { error } = await supabase
-          .from("users")
-          .update(userData)
-          .eq("id", user.id)
-        userUpdateError = error
-      } else {
-        // Criar novo usuário
-        const { error } = await supabase
-          .from("users")
-          .insert(userData)
-        userUpdateError = error
-      }
+      // Atualizar usuário existente
+      const { error: userUpdateError } = await supabase
+        .from("users")
+        .update(userData)
+        .eq("id", user.id)
 
       if (userUpdateError) {
-        console.error("Erro ao salvar usuário:", userUpdateError)
+        console.error("Erro ao atualizar usuário:", userUpdateError)
         toast({
           variant: "destructive",
           title: "Erro ao salvar dados",
