@@ -52,6 +52,7 @@ interface ServiceModalProps {
   onOpenChange: (open: boolean) => void
   onSuccess?: () => void
   service?: ServiceWithRelations | null
+  initialDate?: string // Data inicial para pré-preencher (formato YYYY-MM-DD)
 }
 
 export function ServiceModal({
@@ -59,6 +60,7 @@ export function ServiceModal({
   onOpenChange,
   onSuccess,
   service,
+  initialDate,
 }: ServiceModalProps) {
   const { toast } = useToast()
   const [loading, setLoading] = useState(false)
@@ -142,7 +144,7 @@ export function ServiceModal({
           // Resetar formulário para novo serviço
           // Status sempre será "pendente" na criação (definido automaticamente pelo sistema)
           setFormData({
-            date: new Date().toISOString().split("T")[0],
+            date: initialDate || new Date().toISOString().split("T")[0],
             status: "pendente", // Sempre pendente na criação
             priority: "media", // Valor padrão (não editável no formulário)
             has_invoice: false,
@@ -662,21 +664,6 @@ export function ServiceModal({
                       placeholder="Ex: PIX, Cartão, Boleto..."
                     />
                   </div>
-
-                  {/* Data de Pagamento */}
-                  {formData.payment_method && (
-                    <div className="space-y-2">
-                      <Label htmlFor="payment_date">Data de Pagamento</Label>
-                      <Input
-                        id="payment_date"
-                        type="date"
-                        value={formData.payment_date || ""}
-                        onChange={(e) =>
-                          setFormData({ ...formData, payment_date: e.target.value })
-                        }
-                      />
-                    </div>
-                  )}
                 </div>
               )}
             </div>

@@ -138,3 +138,4 @@ technicians
 - Campos de status e prioridade usam valores textuais (podem ser enums no futuro)
 
 
+
