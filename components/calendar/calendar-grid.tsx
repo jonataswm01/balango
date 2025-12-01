@@ -67,11 +67,11 @@ export function CalendarGrid({
   return (
     <div className="bg-white dark:bg-slate-950 h-full flex flex-col">
       {/* Cabeçalho dos dias da semana */}
-      <div className="grid grid-cols-7 gap-0.5 bg-slate-50 dark:bg-slate-900 px-2 py-3 flex-shrink-0">
+      <div className="grid grid-cols-7 gap-0 bg-slate-50 dark:bg-slate-900 px-2 py-3 flex-shrink-0 border-t border-l border-r border-slate-200/30 dark:border-slate-700/30">
         {weekDays.map((day) => (
           <div
             key={day}
-            className="text-center text-xs font-medium text-slate-600 dark:text-slate-400"
+            className="text-center text-xs font-medium text-slate-600 dark:text-slate-400 border-r border-slate-200/30 dark:border-slate-700/30 last:border-r-0"
           >
             {day}
           </div>
@@ -79,7 +79,7 @@ export function CalendarGrid({
       </div>
 
       {/* Grid do calendário - Ocupa o espaço restante */}
-      <div className="grid grid-cols-7 gap-0.5 p-2 flex-1 auto-rows-fr">
+      <div className="grid grid-cols-7 gap-0 flex-1 auto-rows-fr border-t border-l border-slate-200/30 dark:border-slate-700/30">
         {days.map((calendarDay, index) => {
           const date = calendarDay.date
           const isSelected = isSelectedDay(date)

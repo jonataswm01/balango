@@ -25,13 +25,13 @@ export function Sidebar() {
   const pathname = usePathname()
 
   return (
-    <div className="hidden lg:flex lg:flex-col lg:w-20 lg:border-r lg:border-slate-200 lg:bg-white fixed left-0 top-0 h-screen">
+    <div className="hidden lg:flex lg:flex-col lg:w-20 lg:border-r lg:border-slate-200 lg:bg-white dark:bg-slate-950 dark:border-slate-800 fixed left-0 top-0 h-screen z-30">
       <div className="flex flex-col h-full items-center py-6">
         {/* Logo - Topo */}
         <div className="mb-8">
           <Link href="/dashboard">
             <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-500 text-white font-bold text-xl shadow-md hover:shadow-lg transition-shadow">
-              L
+              B
             </div>
           </Link>
         </div>

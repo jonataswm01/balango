@@ -44,6 +44,16 @@ export function DayView({
     }
   }
 
+  // Determinar se deve mostrar preview baseado em mobile/desktop
+  const shouldShowPreview = mounted ? !isMobile : true // Durante SSR, assume desktop
+
+  // Clonar children para passar showPreview
+  const childrenWithProps = React.isValidElement(children)
+    ? React.cloneElement(children as React.ReactElement<any>, {
+        showPreview: shouldShowPreview,
+      })
+    : children
+
   // Durante SSR ou antes de montar, usar Popover (padrão desktop)
   if (!mounted) {
     return (
@@ -60,13 +70,13 @@ export function DayView({
           className="w-full text-left"
           onClick={handleClick}
         >
-          {children}
+          {childrenWithProps}
         </button>
       </DayPopover>
     )
   }
 
-  // No mobile, usar Modal com div clicável
+  // No mobile, usar Modal com div clicável (sem preview)
   if (isMobile) {
     return (
       <>
@@ -82,7 +92,7 @@ export function DayView({
             }
           }}
         >
-          {children}
+          {childrenWithProps}
         </div>
         <DayModal
           date={date}
@@ -98,7 +108,7 @@ export function DayView({
     )
   }
 
-  // No desktop, usar Popover com button
+  // No desktop, usar Popover com button (com preview)
   return (
     <DayPopover
       date={date}
@@ -113,7 +123,7 @@ export function DayView({
         className="w-full text-left transition-transform duration-150 hover:scale-[1.02] active:scale-95"
         onClick={handleClick}
       >
-        {children}
+        {childrenWithProps}
       </button>
     </DayPopover>
   )

@@ -9,7 +9,6 @@ import { servicesApi } from "@/lib/api/client"
 import { ServiceWithRelations } from "@/lib/types/database"
 import { ServiceModal } from "@/components/services/service-modal"
 import { ConfirmDialog } from "@/components/shared/confirm-dialog"
-import { MobileMenu } from "@/components/layout/mobile-menu"
 
 // CalendarDay agora está definido em calendar-grid.tsx
 
@@ -35,7 +34,6 @@ export default function CalendarPage() {
   const [editingService, setEditingService] = useState<ServiceWithRelations | null>(null)
   const [deletingService, setDeletingService] = useState<ServiceWithRelations | null>(null)
   const [serviceDate, setServiceDate] = useState<Date | null>(null)
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   // Carregar serviços do mês
   const loadMonthServices = async (year: number, month: number) => {
@@ -224,17 +222,14 @@ export default function CalendarPage() {
   }
 
   return (
-    <div className="fixed inset-0 flex flex-col bg-white dark:bg-slate-950 overflow-hidden">
-      {/* Header fixo no topo */}
-      <div className="flex-shrink-0 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 z-10">
-        <CalendarHeader
-          currentDate={currentDate}
-          onPreviousMonth={handlePreviousMonth}
-          onNextMonth={handleNextMonth}
-          onToday={handleToday}
-          onMenuClick={() => setMobileMenuOpen(true)}
-        />
-      </div>
+    <div className="h-full flex flex-col bg-white dark:bg-slate-950 overflow-hidden">
+      {/* Navegação do Calendário (setas e nome do mês) */}
+      <CalendarHeader
+        currentDate={currentDate}
+        onPreviousMonth={handlePreviousMonth}
+        onNextMonth={handleNextMonth}
+        onToday={handleToday}
+      />
 
       {/* Calendário ocupando o resto da tela */}
       <div className="flex-1 overflow-y-auto">
@@ -274,12 +269,6 @@ export default function CalendarPage() {
         cancelLabel="Cancelar"
         onConfirm={confirmDelete}
         variant="destructive"
-      />
-
-      {/* Menu Mobile */}
-      <MobileMenu
-        open={mobileMenuOpen}
-        onOpenChange={setMobileMenuOpen}
       />
     </div>
   )

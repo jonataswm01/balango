@@ -12,7 +12,6 @@ interface CalendarHeaderProps {
   onToday: () => void
   view?: "month" | "week" | "day"
   onViewChange?: (view: "month" | "week" | "day") => void
-  onMenuClick?: () => void
 }
 
 export function CalendarHeader({
@@ -22,45 +21,34 @@ export function CalendarHeader({
   onToday,
   view = "month",
   onViewChange,
-  onMenuClick,
 }: CalendarHeaderProps) {
   const isToday = 
     currentDate.getMonth() === new Date().getMonth() &&
     currentDate.getFullYear() === new Date().getFullYear()
 
   return (
-    <div className="sticky top-0 z-10 bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800">
+    <div className="bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800">
       <div className="p-4 space-y-3">
         {/* Navegação de Mês */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            {/* Botão Hamburger - Mobile */}
-            {onMenuClick && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onMenuClick}
-                className="h-10 w-10 lg:hidden transition-all duration-200 hover:bg-slate-100 dark:hover:bg-slate-800"
-              >
-                <Menu className="h-5 w-5 text-slate-600 transition-transform duration-200 hover:rotate-90" />
-              </Button>
-            )}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onPreviousMonth}
-              className="h-10 w-10 transition-all duration-200 hover:bg-slate-100 dark:hover:bg-slate-800"
-            >
-              <ChevronLeft className="h-5 w-5 transition-transform duration-200 hover:-translate-x-1" />
-            </Button>
-          </div>
+          {/* Lado Esquerdo - Seta Anterior */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onPreviousMonth}
+            className="h-10 w-10 transition-all duration-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+          >
+            <ChevronLeft className="h-5 w-5 transition-transform duration-200 hover:-translate-x-1" />
+          </Button>
           
-          <div className="text-center">
+          {/* Centro - Mês/Ano */}
+          <div className="text-center flex-1">
             <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 transition-colors duration-200">
               {formatMonthYear(currentDate)}
             </h2>
           </div>
           
+          {/* Lado Direito - Seta Próximo */}
           <Button
             variant="ghost"
             size="icon"

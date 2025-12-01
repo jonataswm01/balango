@@ -14,7 +14,6 @@ export default function PrivateLayout({
   const pathname = usePathname()
   const isConfiguracoes = pathname === "/configuracoes" || pathname.startsWith("/configuracoes/")
   const isOnboarding = pathname === "/onboarding"
-  const isCalendar = pathname === "/calendar"
 
   // Se for onboarding, não mostrar sidebar/header
   if (isOnboarding) {
@@ -25,22 +24,7 @@ export default function PrivateLayout({
     )
   }
 
-  // Se for calendário, layout fullscreen
-  if (isCalendar) {
-    return (
-      <ProtectedRoute>
-        <OrganizationProvider>
-          <div className="fixed inset-0 flex">
-            <Sidebar />
-            <div className="flex-1 flex flex-col lg:ml-20 w-full overflow-hidden">
-              {children}
-            </div>
-          </div>
-        </OrganizationProvider>
-      </ProtectedRoute>
-    )
-  }
-
+  // Layout padrão para todas as páginas (incluindo calendário)
   return (
     <ProtectedRoute>
       <OrganizationProvider>
@@ -48,7 +32,7 @@ export default function PrivateLayout({
           <Sidebar />
           <div className="flex-1 flex flex-col lg:ml-20 w-full">
             {!isConfiguracoes && <Header />}
-            <main className="flex-1 bg-slate-50 dark:bg-slate-900">{children}</main>
+            <main className="flex-1 bg-slate-50 dark:bg-slate-900 overflow-hidden">{children}</main>
           </div>
         </div>
       </OrganizationProvider>

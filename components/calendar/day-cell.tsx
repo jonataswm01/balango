@@ -13,6 +13,7 @@ interface DayCellProps {
   hasInvoice: boolean
   isOtherMonth?: boolean
   onClick?: () => void
+  showPreview?: boolean // Controla se mostra preview (contador, valor, ícone) - padrão true
 }
 
 export function DayCell({
@@ -24,6 +25,7 @@ export function DayCell({
   hasInvoice,
   isOtherMonth = false,
   onClick,
+  showPreview = true, // Por padrão mostra preview
 }: DayCellProps) {
   const hasServices = serviceCount > 0
   const isClickable = onClick // Sempre clicável se tiver onClick
@@ -51,8 +53,9 @@ export function DayCell({
   return (
     <div
       className={cn(
-        "relative min-h-[64px] p-2 rounded-lg transition-all duration-200 ease-in-out",
+        "relative min-h-[64px] p-2 transition-all duration-200 ease-in-out",
         "flex flex-col items-center justify-start w-full",
+        "border-r border-b border-slate-200/30 dark:border-slate-700/30",
         "hover:scale-105 hover:shadow-md active:scale-95",
         isOtherMonth && "opacity-40",
         isSelected
@@ -88,8 +91,8 @@ export function DayCell({
         {day}
       </div>
 
-      {/* Informações adicionais (apenas se houver serviços e não estiver selecionado) */}
-      {hasServices && !isSelected && (
+      {/* Informações adicionais (apenas se houver serviços, não estiver selecionado E showPreview for true) */}
+      {hasServices && !isSelected && showPreview && (
         <div className="mt-1 space-y-0.5 w-full">
           {/* Contador */}
           <div className="text-[10px] text-slate-600 dark:text-slate-400 text-center font-medium">
