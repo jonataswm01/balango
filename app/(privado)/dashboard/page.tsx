@@ -12,6 +12,7 @@ import { ChartSelector } from "@/components/shared/chart-selector"
 import { ChartWrapper } from "@/components/dashboard/chart-wrapper"
 import { ServiceCard } from "@/components/services/service-card"
 import { ServiceModal } from "@/components/services/service-modal"
+import { ServiceWizard } from "@/components/services/service-wizard"
 import { FiltersPanel } from "@/components/shared/filters-panel"
 import { LoadingSpinner } from "@/components/shared/loading-spinner"
 import { EmptyState } from "@/components/shared/empty-state"
@@ -23,6 +24,7 @@ export default function DashboardPage() {
   const [services, setServices] = useState<ServiceWithRelations[]>([])
   const [filteredServices, setFilteredServices] = useState<ServiceWithRelations[]>([])
   const [filters, setFilters] = useState<ServiceFilters>({})
+  const [showServiceWizard, setShowServiceWizard] = useState(false)
   const [showServiceModal, setShowServiceModal] = useState(false)
   const [editingService, setEditingService] = useState<ServiceWithRelations | null>(null)
   const [deletingService, setDeletingService] = useState<ServiceWithRelations | null>(null)
@@ -101,7 +103,7 @@ export default function DashboardPage() {
   // Handlers
   const handleCreateService = () => {
     setEditingService(null)
-    setShowServiceModal(true)
+    setShowServiceWizard(true)
   }
 
   const handleEditService = (service: ServiceWithRelations) => {
@@ -137,6 +139,11 @@ export default function DashboardPage() {
     loadServices()
     setShowServiceModal(false)
     setEditingService(null)
+  }
+
+  const handleServiceWizardSuccess = () => {
+    loadServices()
+    setShowServiceWizard(false)
   }
 
   const handleFiltersChange = (newFilters: ServiceFilters) => {
@@ -278,6 +285,12 @@ export default function DashboardPage() {
       </Button>
 
       {/* Modais */}
+      <ServiceWizard
+        open={showServiceWizard}
+        onOpenChange={setShowServiceWizard}
+        onSuccess={handleServiceWizardSuccess}
+      />
+
       <ServiceModal
         open={showServiceModal}
         onOpenChange={setShowServiceModal}

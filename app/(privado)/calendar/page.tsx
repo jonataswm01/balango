@@ -8,6 +8,7 @@ import { useToast } from "@/components/ui/use-toast"
 import { servicesApi } from "@/lib/api/client"
 import { ServiceWithRelations } from "@/lib/types/database"
 import { ServiceModal } from "@/components/services/service-modal"
+import { ServiceWizard } from "@/components/services/service-wizard"
 import { ConfirmDialog } from "@/components/shared/confirm-dialog"
 
 // CalendarDay agora está definido em calendar-grid.tsx
@@ -30,6 +31,7 @@ export default function CalendarPage() {
   const [loading, setLoading] = useState(true)
   const [servicesByDay, setServicesByDay] = useState<DayServices>({})
   const [allServices, setAllServices] = useState<ServiceWithRelations[]>([])
+  const [showServiceWizard, setShowServiceWizard] = useState(false)
   const [showServiceModal, setShowServiceModal] = useState(false)
   const [editingService, setEditingService] = useState<ServiceWithRelations | null>(null)
   const [deletingService, setDeletingService] = useState<ServiceWithRelations | null>(null)
@@ -74,7 +76,7 @@ export default function CalendarPage() {
   const handleAddService = (date: Date) => {
     setServiceDate(date)
     setEditingService(null)
-    setShowServiceModal(true)
+    setShowServiceWizard(true)
   }
 
   const handleEditService = (service: ServiceWithRelations) => {
@@ -120,6 +122,22 @@ export default function CalendarPage() {
     setShowServiceModal(false)
     setEditingService(null)
     setServiceDate(null)
+  }
+
+  const handleServiceWizardSuccess = () => {
+    const year = currentDate.getFullYear()
+    const month = currentDate.getMonth()
+    loadMonthServices(year, month)
+    loadAllServices()
+    setShowServiceWizard(false)
+    setServiceDate(null)
+  }
+
+  const handleWizardOpenChange = (open: boolean) => {
+    setShowServiceWizard(open)
+    if (!open) {
+      setServiceDate(null)
+    }
   }
 
   // Calcular dias do calendário
@@ -249,6 +267,13 @@ export default function CalendarPage() {
           />
         )}
       </div>
+
+      <ServiceWizard
+        open={showServiceWizard}
+        onOpenChange={handleWizardOpenChange}
+        onSuccess={handleServiceWizardSuccess}
+        initialDate={serviceDate ? serviceDate.toISOString().split("T")[0] : undefined}
+      />
 
       {/* Modal de criar/editar serviço */}
       <ServiceModal
