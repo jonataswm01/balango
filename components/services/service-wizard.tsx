@@ -17,16 +17,17 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
-import { parseCurrencyInput } from "@/lib/utils/currency"
+import { parseCurrencyInput, formatCurrencyInput } from "@/lib/utils/currency"
 import { useToast } from "@/components/ui/use-toast"
 import { servicesApi } from "@/lib/api/client"
-import type { ServiceInsert } from "@/lib/types/database"
+import type { ServiceInsert, ServiceUpdate, ServiceWithRelations } from "@/lib/types/database"
 
 interface ServiceWizardProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSuccess?: () => void
   initialDate?: string
+  serviceToEdit?: ServiceWithRelations | null
 }
 
 export function ServiceWizard({
@@ -34,6 +35,7 @@ export function ServiceWizard({
   onOpenChange,
   onSuccess,
   initialDate,
+  serviceToEdit,
 }: ServiceWizardProps) {
   const { toast } = useToast()
   const today = useMemo(() => new Date().toISOString().split("T")[0], [])
@@ -68,22 +70,66 @@ export function ServiceWizard({
 
   type FormValues = z.infer<typeof formSchema>
 
-  const createDefaultValues = (): FormValues => ({
-    date: initialDate || today,
-    start_time: "",
-    description: "",
-    location: "",
-    client_id: "",
-    technician_id: "",
-    gross_value: "",
-    operational_cost: "",
-    payment_status: "pendente",
-    payment_date: "",
-  })
+  // Memoizar valores padrão baseados em serviceToEdit
+  const defaultValues = useMemo((): FormValues => {
+    // Se estiver editando, preencher com dados do serviço
+    if (serviceToEdit) {
+      // Formatar payment_date para YYYY-MM-DD se existir
+      let formattedPaymentDate = ""
+      if (serviceToEdit.payment_date) {
+        const paymentDate = new Date(serviceToEdit.payment_date)
+        if (!isNaN(paymentDate.getTime())) {
+          formattedPaymentDate = paymentDate.toISOString().split("T")[0]
+        }
+      }
+
+      // Formatar start_time se start_date existir
+      let formattedStartTime = ""
+      if (serviceToEdit.start_date) {
+        const startDate = new Date(serviceToEdit.start_date)
+        if (!isNaN(startDate.getTime())) {
+          const hours = String(startDate.getHours()).padStart(2, "0")
+          const minutes = String(startDate.getMinutes()).padStart(2, "0")
+          formattedStartTime = `${hours}:${minutes}`
+        }
+      }
+
+      return {
+        date: serviceToEdit.date || initialDate || today,
+        start_time: formattedStartTime,
+        description: serviceToEdit.description || "",
+        location: serviceToEdit.location || "",
+        client_id: serviceToEdit.client_id || "",
+        technician_id: serviceToEdit.technician_id || "",
+        gross_value: serviceToEdit.gross_value
+          ? formatCurrencyInput(serviceToEdit.gross_value)
+          : "",
+        operational_cost: serviceToEdit.operational_cost
+          ? formatCurrencyInput(serviceToEdit.operational_cost)
+          : "",
+        payment_status: serviceToEdit.payment_status || "pendente",
+        payment_date: formattedPaymentDate,
+      }
+    }
+
+    // Valores padrão para novo serviço
+    return {
+      date: initialDate || today,
+      start_time: "",
+      description: "",
+      location: "",
+      client_id: "",
+      technician_id: "",
+      gross_value: "",
+      operational_cost: "",
+      payment_status: "pendente",
+      payment_date: "",
+    }
+  }, [serviceToEdit, initialDate, today])
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: createDefaultValues(),
+    defaultValues,
     mode: "onBlur",
   })
 
@@ -108,12 +154,19 @@ export function ServiceWizard({
   >([])
   const [loadingResources, setLoadingResources] = useState(false)
 
+  // Reset form when modal opens or serviceToEdit changes
   useEffect(() => {
     if (open) {
       setCurrentStep(1)
-      reset(createDefaultValues())
+      reset(defaultValues)
+      
+      // Se estiver editando e payment_status for 'pago', garantir que payment_date esteja preenchido
+      if (serviceToEdit && serviceToEdit.payment_status === 'pago' && defaultValues.payment_date) {
+        setValue("payment_status", "pago", { shouldDirty: false, shouldValidate: false })
+        setValue("payment_date", defaultValues.payment_date, { shouldDirty: false, shouldValidate: false })
+      }
     }
-  }, [open, initialDate, reset])
+  }, [open, defaultValues, serviceToEdit, reset, setValue])
 
   useEffect(() => {
     if (!open) return
@@ -189,40 +242,95 @@ export function ServiceWizard({
 
   const handleClose = () => {
     setCurrentStep(1)
-    reset(createDefaultValues())
+    // Resetar para valores padrão (sem serviceToEdit)
+    reset({
+      date: initialDate || today,
+      start_time: "",
+      description: "",
+      location: "",
+      client_id: "",
+      technician_id: "",
+      gross_value: "",
+      operational_cost: "",
+      payment_status: "pendente",
+      payment_date: "",
+    })
     onOpenChange(false)
   }
 
   const onSubmit = async (values: FormValues) => {
-    const payload: ServiceInsert = {
-      date: values.date,
-      description: values.description || undefined,
-      location: values.location,
-      client_id: values.client_id,
-      technician_id: values.technician_id,
-      gross_value: parseCurrencyInput(values.gross_value),
-      operational_cost: values.operational_cost
-        ? parseCurrencyInput(values.operational_cost)
-        : 0,
-      payment_status: values.payment_status,
-      payment_date: values.payment_status === "pago" ? values.payment_date : null,
-      status: "pendente",
-      priority: "media",
-    }
-
     try {
-      await servicesApi.create(payload)
-      toast({
-        title: "Serviço criado!",
-        description: "O serviço foi criado com sucesso.",
-      })
+      if (serviceToEdit) {
+        // Atualizar serviço existente
+        const updatePayload: ServiceUpdate = {
+          date: values.date,
+          description: values.description || null,
+          location: values.location,
+          client_id: values.client_id,
+          technician_id: values.technician_id,
+          gross_value: parseCurrencyInput(values.gross_value),
+          operational_cost: values.operational_cost
+            ? parseCurrencyInput(values.operational_cost)
+            : 0,
+          payment_status: values.payment_status,
+          payment_date: values.payment_status === "pago" ? values.payment_date || null : null,
+        }
+
+        // Se start_time foi preenchido, criar start_date
+        if (values.start_time) {
+          const [hours, minutes] = values.start_time.split(":")
+          const startDate = new Date(values.date)
+          startDate.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0)
+          updatePayload.start_date = startDate.toISOString()
+        }
+
+        await servicesApi.update(serviceToEdit.id, updatePayload)
+        toast({
+          title: "Serviço atualizado!",
+          description: "O serviço foi atualizado com sucesso.",
+        })
+      } else {
+        // Criar novo serviço
+        const createPayload: ServiceInsert = {
+          date: values.date,
+          description: values.description || undefined,
+          location: values.location,
+          client_id: values.client_id,
+          technician_id: values.technician_id,
+          gross_value: parseCurrencyInput(values.gross_value),
+          operational_cost: values.operational_cost
+            ? parseCurrencyInput(values.operational_cost)
+            : 0,
+          payment_status: values.payment_status,
+          payment_date: values.payment_status === "pago" ? values.payment_date : null,
+          status: "pendente",
+          priority: "media",
+        }
+
+        // Se start_time foi preenchido, criar start_date
+        if (values.start_time) {
+          const [hours, minutes] = values.start_time.split(":")
+          const startDate = new Date(values.date)
+          startDate.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0)
+          createPayload.start_date = startDate.toISOString()
+        }
+
+        await servicesApi.create(createPayload)
+        toast({
+          title: "Serviço criado!",
+          description: "O serviço foi criado com sucesso.",
+        })
+      }
+
       handleClose()
       onSuccess?.()
     } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Erro ao salvar",
-        description: error?.message || "Não foi possível criar o serviço.",
+        description:
+          error?.message ||
+          `Não foi possível ${serviceToEdit ? "atualizar" : "criar"} o serviço.`,
       })
     }
   }
@@ -239,7 +347,9 @@ export function ServiceWizard({
         {/* Header with Progress Bar */}
         <div className="border-b border-slate-200 dark:border-slate-800 p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Novo Serviço</h2>
+            <h2 className="text-lg font-semibold">
+              {serviceToEdit ? "Editar Serviço" : "Novo Serviço"}
+            </h2>
             <Button
               variant="ghost"
               size="icon"
@@ -528,7 +638,11 @@ export function ServiceWizard({
               </Button>
             ) : (
               <Button type="submit" className="flex-1 md:flex-initial" disabled={isSubmitting}>
-                {isSubmitting ? "Salvando..." : "Salvar"}
+                {isSubmitting
+                  ? "Salvando..."
+                  : serviceToEdit
+                    ? "Atualizar"
+                    : "Salvar"}
               </Button>
             )}
           </div>
