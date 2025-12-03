@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import { useForm, Controller, type FieldPath } from "react-hook-form"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { X, ChevronLeft, ChevronRight } from "lucide-react"
+import { X, ChevronLeft, ChevronRight, FileText } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -55,6 +55,8 @@ export function ServiceWizard({
         .string()
         .min(1, "Custo operacional é obrigatório")
         .regex(/^\d*([.,]\d{0,2})?$/, "Use apenas números e vírgula/ponto"),
+      has_invoice: z.boolean().default(false),
+      invoice_number: z.string().optional(),
       payment_status: z.enum(["pendente", "pago"]),
       payment_date: z.string().optional(),
     })
@@ -107,7 +109,9 @@ export function ServiceWizard({
         operational_cost: serviceToEdit.operational_cost
           ? formatCurrencyInput(serviceToEdit.operational_cost)
           : "",
-        payment_status: serviceToEdit.payment_status || "pendente",
+        has_invoice: serviceToEdit.has_invoice || false,
+        invoice_number: serviceToEdit.invoice_number || "",
+        payment_status: (serviceToEdit.payment_status === "pago" ? "pago" : "pendente") as "pendente" | "pago",
         payment_date: formattedPaymentDate,
       }
     }
@@ -122,6 +126,8 @@ export function ServiceWizard({
       technician_id: "",
       gross_value: "",
       operational_cost: "",
+      has_invoice: false,
+      invoice_number: "",
       payment_status: "pendente",
       payment_date: "",
     }
@@ -147,6 +153,7 @@ export function ServiceWizard({
 
   const [currentStep, setCurrentStep] = useState(1)
   const totalSteps = 3
+  const [isValidating, setIsValidating] = useState(false)
 
   const [clients, setClients] = useState<Array<{ id: string; name: string }>>([])
   const [technicians, setTechnicians] = useState<
@@ -162,11 +169,15 @@ export function ServiceWizard({
       
       // Se estiver editando e payment_status for 'pago', garantir que payment_date esteja preenchido
       if (serviceToEdit && serviceToEdit.payment_status === 'pago' && defaultValues.payment_date) {
-        setValue("payment_status", "pago", { shouldDirty: false, shouldValidate: false })
-        setValue("payment_date", defaultValues.payment_date, { shouldDirty: false, shouldValidate: false })
+        // Usar setTimeout para garantir que o reset aconteceu primeiro
+        setTimeout(() => {
+          setValue("payment_status", "pago", { shouldDirty: false, shouldValidate: false })
+          setValue("payment_date", defaultValues.payment_date, { shouldDirty: false, shouldValidate: false })
+        }, 0)
       }
     }
-  }, [open, defaultValues, serviceToEdit, reset, setValue])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, serviceToEdit?.id]) // Apenas quando o modal abre ou o serviço muda
 
   useEffect(() => {
     if (!open) return
@@ -225,12 +236,34 @@ export function ServiceWizard({
   }
 
   // Navigation handlers
-  const handleNext = async () => {
-    const fields = stepFields[currentStep] || []
-    const isValid = await trigger(fields)
-    if (!isValid) return
-    if (currentStep < totalSteps) {
-      setCurrentStep((prev) => prev + 1)
+  const handleNext = async (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
+    
+    // Garantir que não estamos no último passo antes de validar
+    if (currentStep >= totalSteps) {
+      return
+    }
+    
+    // Usar estado local para validação, não isSubmitting
+    setIsValidating(true)
+    try {
+      // Validar campos do passo atual
+      const fields = stepFields[currentStep] || []
+      const isValid = await trigger(fields, { shouldFocus: true })
+      
+      if (!isValid) {
+        return
+      }
+      
+      // Só avançar se não estiver no último passo
+      if (currentStep < totalSteps) {
+        setCurrentStep((prev) => prev + 1)
+      }
+    } finally {
+      setIsValidating(false)
     }
   }
 
@@ -252,10 +285,29 @@ export function ServiceWizard({
       technician_id: "",
       gross_value: "",
       operational_cost: "",
+      has_invoice: false,
+      invoice_number: "",
       payment_status: "pendente",
       payment_date: "",
     })
     onOpenChange(false)
+  }
+
+  // Prevenir submit quando não estiver no último passo
+  const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    // Sempre prevenir o comportamento padrão primeiro
+    e.preventDefault()
+    e.stopPropagation()
+    
+    // IMPORTANTE: Só submeter se estiver no último passo
+    // Se não estiver no último passo, apenas prevenir e retornar
+    if (currentStep !== totalSteps) {
+      return
+    }
+    
+    // Só chegar aqui se estiver no último passo
+    // Usar handleSubmit do react-hook-form que já gerencia o isSubmitting
+    handleSubmit(onSubmit)(e)
   }
 
   const onSubmit = async (values: FormValues) => {
@@ -272,6 +324,8 @@ export function ServiceWizard({
           operational_cost: values.operational_cost
             ? parseCurrencyInput(values.operational_cost)
             : 0,
+          has_invoice: values.has_invoice,
+          invoice_number: values.has_invoice && values.invoice_number ? values.invoice_number : null,
           payment_status: values.payment_status,
           payment_date: values.payment_status === "pago" ? values.payment_date || null : null,
         }
@@ -301,6 +355,8 @@ export function ServiceWizard({
           operational_cost: values.operational_cost
             ? parseCurrencyInput(values.operational_cost)
             : 0,
+          has_invoice: values.has_invoice,
+          invoice_number: values.has_invoice && values.invoice_number ? values.invoice_number : null,
           payment_status: values.payment_status,
           payment_date: values.payment_status === "pago" ? values.payment_date : null,
           status: "pendente",
@@ -341,7 +397,14 @@ export function ServiceWizard({
     <div className="fixed inset-0 z-50 bg-background md:bg-black/50 md:backdrop-blur-sm md:flex md:items-center md:justify-center">
       {/* Mobile: Full Screen Container */}
       <form
-        onSubmit={handleSubmit(onSubmit)}
+        onSubmit={handleFormSubmit}
+        onKeyDown={(e) => {
+          // Prevenir submit ao pressionar Enter quando não estiver no último passo
+          if (e.key === 'Enter' && currentStep < totalSteps) {
+            e.preventDefault()
+            e.stopPropagation()
+          }
+        }}
         className="flex flex-col h-full w-full md:h-auto md:w-full md:max-w-2xl md:max-h-[90vh] md:rounded-lg md:shadow-lg bg-background"
       >
         {/* Header with Progress Bar */}
@@ -533,6 +596,11 @@ export function ServiceWizard({
                       placeholder="0,00"
                       className="h-12 md:h-10"
                       {...register("gross_value")}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && currentStep < totalSteps) {
+                          e.preventDefault()
+                        }
+                      }}
                     />
                     {errors.gross_value && (
                       <p className="text-sm text-red-500">{errors.gross_value.message}</p>
@@ -548,11 +616,84 @@ export function ServiceWizard({
                       placeholder="0,00"
                       className="h-12 md:h-10"
                       {...register("operational_cost")}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && currentStep < totalSteps) {
+                          e.preventDefault()
+                        }
+                      }}
                     />
                     {errors.operational_cost && (
                       <p className="text-sm text-red-500">
                         {errors.operational_cost.message}
                       </p>
+                    )}
+                  </div>
+
+                  {/* Nota Fiscal */}
+                  <div className="space-y-2">
+                    <Label>Nota Fiscal</Label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const currentValue = watch("has_invoice")
+                        setValue("has_invoice", !currentValue, { shouldDirty: true, shouldValidate: true })
+                      }}
+                      className={cn(
+                        "w-full flex items-center gap-3 px-4 py-3 rounded-md border-2 transition-all font-medium text-left",
+                        watch("has_invoice")
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-slate-200 dark:border-slate-700 bg-background text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600"
+                      )}
+                    >
+                      <div
+                        className={cn(
+                          "flex items-center justify-center w-5 h-5 rounded border-2 transition-all flex-shrink-0",
+                          watch("has_invoice")
+                            ? "border-primary bg-primary"
+                            : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
+                        )}
+                      >
+                        {watch("has_invoice") && (
+                          <svg
+                            className="w-3.5 h-3.5 text-white"
+                            fill="none"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="3"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 flex-1">
+                        <FileText className="h-4 w-4" />
+                        <span>Possui Nota Fiscal</span>
+                      </div>
+                    </button>
+
+                    {watch("has_invoice") && (
+                      <div className="space-y-2 pt-2">
+                        <Label htmlFor="invoice_number">Número da NF</Label>
+                        <Input
+                          id="invoice_number"
+                          type="text"
+                          placeholder="Número da nota fiscal"
+                          className="h-12 md:h-10"
+                          {...register("invoice_number")}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && currentStep < totalSteps) {
+                              e.preventDefault()
+                            }
+                          }}
+                        />
+                        {errors.invoice_number && (
+                          <p className="text-sm text-red-500">
+                            {errors.invoice_number.message}
+                          </p>
+                        )}
+                      </div>
                     )}
                   </div>
 
@@ -593,6 +734,11 @@ export function ServiceWizard({
                           type="date"
                           className="h-12 md:h-10"
                           {...register("payment_date")}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && currentStep < totalSteps) {
+                              e.preventDefault()
+                            }
+                          }}
                         />
                         {errors.payment_date && (
                           <p className="text-sm text-red-500">
@@ -630,10 +776,15 @@ export function ServiceWizard({
             {currentStep < totalSteps ? (
               <Button
                 type="button"
-                onClick={handleNext}
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  handleNext(e)
+                }}
                 className="flex-1 md:flex-initial"
+                disabled={isValidating || isSubmitting}
               >
-                Próximo
+                {isValidating ? "Validando..." : "Próximo"}
                 <ChevronRight className="h-4 w-4 ml-2" />
               </Button>
             ) : (
