@@ -1,15 +1,21 @@
 "use client"
 
-import { Wallet, Clock, TrendingDown } from "lucide-react"
+import { useState } from "react"
+import { Wallet, Clock, TrendingDown, Info } from "lucide-react"
 import { formatCurrency } from "@/lib/utils"
+import { cn } from "@/lib/utils"
 
 interface WalletStatsProps {
   balance: number
   pending: number
   expenses: number
+  taxes: number
 }
 
-export function WalletStats({ balance, pending, expenses }: WalletStatsProps) {
+export function WalletStats({ balance, pending, expenses, taxes }: WalletStatsProps) {
+  const [isExpensesFlipped, setIsExpensesFlipped] = useState(false)
+  
+  const totalOutflows = expenses + taxes
   return (
     <div>
       {/* Hero Card - Saldo Real */}
@@ -44,19 +50,92 @@ export function WalletStats({ balance, pending, expenses }: WalletStatsProps) {
           </p>
         </div>
 
-        {/* Card 2 - Custos */}
-        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 shadow-sm">
+        {/* Card 2 - Saídas Totais (Flip Card) */}
+        <div 
+          className={cn(
+            "relative bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 shadow-sm transition-all duration-300 cursor-pointer",
+            isExpensesFlipped && "bg-slate-50 dark:bg-slate-700/50 border-blue-200 dark:border-blue-800"
+          )}
+          onClick={() => setIsExpensesFlipped(!isExpensesFlipped)}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault()
+              setIsExpensesFlipped(!isExpensesFlipped)
+            }
+          }}
+        >
           <div className="flex items-start justify-between mb-2">
             <div className="h-10 w-10 rounded-lg bg-red-100 dark:bg-red-900/20 flex items-center justify-center">
               <TrendingDown className="h-5 w-5 text-red-600 dark:text-red-400" />
             </div>
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                setIsExpensesFlipped(!isExpensesFlipped)
+              }}
+              className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors group"
+              aria-label="Ver detalhes"
+            >
+              <Info className={cn(
+                "h-4 w-4 text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors",
+                isExpensesFlipped && "text-blue-600 dark:text-blue-400 animate-pulse"
+              )} />
+            </button>
           </div>
-          <p className="text-xl md:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-1">
-            {formatCurrency(expenses)}
-          </p>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
-            Custos
-          </p>
+          
+          {/* Front State (Default) */}
+          <div 
+            className={cn(
+              "transition-all duration-200",
+              isExpensesFlipped ? "opacity-0 h-0 overflow-hidden" : "opacity-100"
+            )}
+          >
+            <p className="text-xl md:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-1">
+              {formatCurrency(totalOutflows)}
+            </p>
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              Saídas Totais
+            </p>
+          </div>
+
+          {/* Back State (Flipped) */}
+          <div 
+            className={cn(
+              "transition-all duration-200 space-y-2",
+              !isExpensesFlipped ? "opacity-0 h-0 overflow-hidden" : "opacity-100"
+            )}
+          >
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-slate-500 dark:text-slate-400">
+                  Operacional:
+                </span>
+                <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                  {formatCurrency(expenses)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-slate-500 dark:text-slate-400">
+                  Impostos:
+                </span>
+                <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                  {formatCurrency(taxes)}
+                </span>
+              </div>
+              <div className="pt-1.5 border-t border-slate-200 dark:border-slate-700 mt-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                    Total:
+                  </span>
+                  <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                    {formatCurrency(totalOutflows)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

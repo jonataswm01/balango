@@ -78,14 +78,16 @@ export default function DashboardPage() {
   }, [])
 
   // Calcular KPIs
-  const { balance, pending, expenses } = useMemo(() => {
+  const { balance, pending, expenses, taxes } = useMemo(() => {
     let balanceValue = 0
     let pendingValue = 0
     let expensesValue = 0
+    let taxesValue = 0
 
     services.forEach((service) => {
       const grossValue = Number(service.gross_value) || 0
       const operationalCost = Number(service.operational_cost) || 0
+      const taxAmount = Number(service.tax_amount) || 0
       const paymentStatus = service.payment_status
 
       // Balance: Net Cash (Gross Paid - Costs)
@@ -100,12 +102,16 @@ export default function DashboardPage() {
 
       // Expenses: Sum of all operational_cost
       expensesValue += operationalCost
+
+      // Taxes: Sum of all tax_amount
+      taxesValue += taxAmount
     })
 
     return {
       balance: balanceValue,
       pending: pendingValue,
       expenses: expensesValue,
+      taxes: taxesValue,
     }
   }, [services])
 
@@ -258,7 +264,7 @@ export default function DashboardPage() {
         <>
           {/* Section 1: Wallet Stats */}
           <div>
-            <WalletStats balance={balance} pending={pending} expenses={expenses} />
+            <WalletStats balance={balance} pending={pending} expenses={expenses} taxes={taxes} />
           </div>
 
           {/* Section 2: Revenue Chart */}
