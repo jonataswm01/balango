@@ -408,9 +408,9 @@ export function ServiceWizard({
         className="flex flex-col h-full w-full md:h-auto md:w-full md:max-w-2xl md:max-h-[90vh] md:rounded-lg md:shadow-lg bg-background"
       >
         {/* Header with Progress Bar */}
-        <div className="border-b border-slate-200 dark:border-slate-800 p-4 space-y-3">
+        <div className="border-b border-slate-200 dark:border-slate-800 p-4 md:p-6 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
               {serviceToEdit ? "Editar Serviço" : "Novo Serviço"}
             </h2>
             <Button
@@ -423,23 +423,24 @@ export function ServiceWizard({
             </Button>
           </div>
 
-          {/* Progress Bar */}
-          <div className="space-y-1">
-            <div className="flex justify-between text-xs text-slate-600 dark:text-slate-400">
-              <span>Passo {currentStep} de {totalSteps}</span>
-              <span>{Math.round(progress)}%</span>
-            </div>
-            <div className="h-2 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+          {/* Segmented Progress Bar */}
+          <div className="flex items-center gap-2">
+            {[1, 2, 3].map((step) => (
               <div
-                className="h-full bg-primary transition-all duration-300 ease-out"
-                style={{ width: `${progress}%` }}
+                key={step}
+                className={cn(
+                  "flex-1 h-2 rounded-full transition-all duration-300",
+                  currentStep >= step
+                    ? "bg-blue-600"
+                    : "bg-slate-200 dark:bg-slate-700"
+                )}
               />
-            </div>
+            ))}
           </div>
         </div>
 
         {/* Content Area - Scrollable */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-6">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6">
           {/* Step 1: Data & Hora */}
           {currentStep === 1 && (
             <div className="space-y-6">
@@ -447,11 +448,13 @@ export function ServiceWizard({
                 <h3 className="text-base font-semibold mb-4">Data e Hora</h3>
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="date">Data do Serviço</Label>
+                    <Label htmlFor="date" className="text-xs font-bold uppercase text-slate-400 tracking-wider ml-1 mb-2 block">
+                      Data do Serviço
+                    </Label>
                     <Input
                       id="date"
                       type="date"
-                      className="h-12 md:h-10"
+                      className="h-14 rounded-2xl bg-slate-50 border-transparent focus:ring-2 focus:ring-blue-500 focus:bg-white dark:bg-slate-800 dark:focus:bg-slate-700"
                       {...register("date")}
                     />
                     {errors.date && (
@@ -460,22 +463,26 @@ export function ServiceWizard({
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="start_time">Horário de Início</Label>
+                    <Label htmlFor="start_time" className="text-xs font-bold uppercase text-slate-400 tracking-wider ml-1 mb-2 block">
+                      Horário de Início
+                    </Label>
                     <Input
                       id="start_time"
                       type="time"
-                      className="h-12 md:h-10"
+                      className="h-14 rounded-2xl bg-slate-50 border-transparent focus:ring-2 focus:ring-blue-500 focus:bg-white dark:bg-slate-800 dark:focus:bg-slate-700"
                       {...register("start_time")}
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="location">Local do Evento</Label>
+                    <Label htmlFor="location" className="text-xs font-bold uppercase text-slate-400 tracking-wider ml-1 mb-2 block">
+                      Local do Evento
+                    </Label>
                     <Input
                       id="location"
                       type="text"
                       placeholder="Ex: Rua Exemplo, 123"
-                      className="h-12 md:h-10"
+                      className="h-14 rounded-2xl bg-slate-50 border-transparent focus:ring-2 focus:ring-blue-500 focus:bg-white dark:bg-slate-800 dark:focus:bg-slate-700"
                       {...register("location")}
                     />
                     {errors.location && (
@@ -484,12 +491,14 @@ export function ServiceWizard({
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="description">Descrição</Label>
+                    <Label htmlFor="description" className="text-xs font-bold uppercase text-slate-400 tracking-wider ml-1 mb-2 block">
+                      Descrição
+                    </Label>
                     <Textarea
                       id="description"
                       placeholder="Descreva o serviço..."
                       rows={4}
-                      className="resize-none"
+                      className="resize-none rounded-2xl bg-slate-50 border-transparent focus:ring-2 focus:ring-blue-500 focus:bg-white dark:bg-slate-800 dark:focus:bg-slate-700 min-h-[120px]"
                       {...register("description")}
                     />
                     {errors.description && (
@@ -511,7 +520,9 @@ export function ServiceWizard({
                 )}
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="client_id">Cliente</Label>
+                    <Label htmlFor="client_id" className="text-xs font-bold uppercase text-slate-400 tracking-wider ml-1 mb-2 block">
+                      Cliente
+                    </Label>
                     <Controller
                       name="client_id"
                       control={control}
@@ -521,7 +532,7 @@ export function ServiceWizard({
                           value={field.value}
                           disabled={loadingResources}
                         >
-                          <SelectTrigger className="h-12 md:h-10" disabled={loadingResources}>
+                          <SelectTrigger className="h-14 rounded-2xl bg-slate-50 border-transparent focus:ring-2 focus:ring-blue-500 focus:bg-white dark:bg-slate-800 dark:focus:bg-slate-700" disabled={loadingResources}>
                             <SelectValue placeholder="Selecione um cliente" />
                           </SelectTrigger>
                           <SelectContent>
@@ -543,7 +554,9 @@ export function ServiceWizard({
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="technician_id">Técnico</Label>
+                    <Label htmlFor="technician_id" className="text-xs font-bold uppercase text-slate-400 tracking-wider ml-1 mb-2 block">
+                      Técnico
+                    </Label>
                     <Controller
                       name="technician_id"
                       control={control}
@@ -553,7 +566,7 @@ export function ServiceWizard({
                           value={field.value}
                           disabled={loadingResources}
                         >
-                          <SelectTrigger className="h-12 md:h-10" disabled={loadingResources}>
+                          <SelectTrigger className="h-14 rounded-2xl bg-slate-50 border-transparent focus:ring-2 focus:ring-blue-500 focus:bg-white dark:bg-slate-800 dark:focus:bg-slate-700" disabled={loadingResources}>
                             <SelectValue placeholder="Selecione um técnico" />
                           </SelectTrigger>
                           <SelectContent>
@@ -588,13 +601,15 @@ export function ServiceWizard({
                 <h3 className="text-base font-semibold mb-4">Financeiro</h3>
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="gross_value">Valor Bruto</Label>
+                    <Label htmlFor="gross_value" className="text-xs font-bold uppercase text-slate-400 tracking-wider ml-1 mb-2 block">
+                      Valor Bruto
+                    </Label>
                     <Input
                       id="gross_value"
                       type="text"
                       inputMode="decimal"
                       placeholder="0,00"
-                      className="h-12 md:h-10"
+                      className="h-14 rounded-2xl bg-slate-50 border-transparent focus:ring-2 focus:ring-blue-500 focus:bg-white dark:bg-slate-800 dark:focus:bg-slate-700"
                       {...register("gross_value")}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" && currentStep < totalSteps) {
@@ -608,13 +623,15 @@ export function ServiceWizard({
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="operational_cost">Custo Operacional</Label>
+                    <Label htmlFor="operational_cost" className="text-xs font-bold uppercase text-slate-400 tracking-wider ml-1 mb-2 block">
+                      Custo Operacional
+                    </Label>
                     <Input
                       id="operational_cost"
                       type="text"
                       inputMode="decimal"
                       placeholder="0,00"
-                      className="h-12 md:h-10"
+                      className="h-14 rounded-2xl bg-slate-50 border-transparent focus:ring-2 focus:ring-blue-500 focus:bg-white dark:bg-slate-800 dark:focus:bg-slate-700"
                       {...register("operational_cost")}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" && currentStep < totalSteps) {
@@ -631,7 +648,9 @@ export function ServiceWizard({
 
                   {/* Nota Fiscal */}
                   <div className="space-y-2">
-                    <Label>Nota Fiscal</Label>
+                    <Label className="text-xs font-bold uppercase text-slate-400 tracking-wider ml-1 mb-2 block">
+                      Nota Fiscal
+                    </Label>
                     <button
                       type="button"
                       onClick={() => {
@@ -675,12 +694,14 @@ export function ServiceWizard({
 
                     {watch("has_invoice") && (
                       <div className="space-y-2 pt-2">
-                        <Label htmlFor="invoice_number">Número da NF</Label>
+                        <Label htmlFor="invoice_number" className="text-xs font-bold uppercase text-slate-400 tracking-wider ml-1 mb-2 block">
+                          Número da NF
+                        </Label>
                         <Input
                           id="invoice_number"
                           type="text"
                           placeholder="Número da nota fiscal"
-                          className="h-12 md:h-10"
+                          className="h-14 rounded-2xl bg-slate-50 border-transparent focus:ring-2 focus:ring-blue-500 focus:bg-white dark:bg-slate-800 dark:focus:bg-slate-700"
                           {...register("invoice_number")}
                           onKeyDown={(e) => {
                             if (e.key === "Enter" && currentStep < totalSteps) {
@@ -699,7 +720,9 @@ export function ServiceWizard({
 
                   {/* Payment Status Toggle */}
                   <div className="space-y-2">
-                    <Label>Status do Pagamento</Label>
+                    <Label className="text-xs font-bold uppercase text-slate-400 tracking-wider ml-1 mb-2 block">
+                      Status do Pagamento
+                    </Label>
                     <div className="flex items-center gap-3">
                       <button
                         type="button"
@@ -728,11 +751,13 @@ export function ServiceWizard({
                     </div>
                     {paymentStatus === "pago" && (
                       <div className="space-y-2 pt-3">
-                        <Label htmlFor="payment_date">Data do Pagamento</Label>
+                        <Label htmlFor="payment_date" className="text-xs font-bold uppercase text-slate-400 tracking-wider ml-1 mb-2 block">
+                          Data do Pagamento
+                        </Label>
                         <Input
                           id="payment_date"
                           type="date"
-                          className="h-12 md:h-10"
+                          className="h-14 rounded-2xl bg-slate-50 border-transparent focus:ring-2 focus:ring-blue-500 focus:bg-white dark:bg-slate-800 dark:focus:bg-slate-700"
                           {...register("payment_date")}
                           onKeyDown={(e) => {
                             if (e.key === "Enter" && currentStep < totalSteps) {
@@ -754,9 +779,9 @@ export function ServiceWizard({
           )}
         </div>
 
-        {/* Footer with Navigation */}
-        <div className="border-t border-slate-200 dark:border-slate-800 p-4">
-          <div className="flex items-center justify-between gap-3">
+        {/* Sticky Footer with Navigation */}
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-t border-slate-100 dark:border-slate-800 z-10 md:relative md:bg-transparent md:backdrop-blur-none md:border-t md:border-slate-200">
+          <div className="flex items-center justify-between gap-3 max-w-2xl mx-auto md:max-w-none">
             {/* Back Button */}
             <Button
               type="button"
@@ -764,7 +789,7 @@ export function ServiceWizard({
               onClick={handleBack}
               disabled={currentStep === 1}
               className={cn(
-                "flex-1 md:flex-initial",
+                "flex-1 md:flex-initial h-12",
                 currentStep === 1 && "invisible"
               )}
             >
@@ -781,14 +806,14 @@ export function ServiceWizard({
                   e.stopPropagation()
                   handleNext(e)
                 }}
-                className="flex-1 md:flex-initial"
+                className="flex-1 md:flex-initial h-12 bg-blue-600 hover:bg-blue-700"
                 disabled={isValidating || isSubmitting}
               >
                 {isValidating ? "Validando..." : "Próximo"}
                 <ChevronRight className="h-4 w-4 ml-2" />
               </Button>
             ) : (
-              <Button type="submit" className="flex-1 md:flex-initial" disabled={isSubmitting}>
+              <Button type="submit" className="flex-1 md:flex-initial h-12 bg-blue-600 hover:bg-blue-700" disabled={isSubmitting}>
                 {isSubmitting
                   ? "Salvando..."
                   : serviceToEdit

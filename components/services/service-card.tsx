@@ -1,5 +1,6 @@
 "use client"
 
+import { User } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { ServiceWithRelations } from "@/lib/types/database"
 import { formatDate } from "@/lib/utils"
@@ -13,6 +14,7 @@ interface ServiceCardProps {
 
 export function ServiceCard({ service, onClick }: ServiceCardProps) {
   const clientName = service.client?.name || "N/A"
+  const technicianName = service.technician?.nickname || service.technician?.name || null
   const statusColor = getStatusColor(service.status)
 
   // Mapear cores para classes Tailwind
@@ -46,6 +48,14 @@ export function ServiceCard({ service, onClick }: ServiceCardProps) {
               <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
                 {clientName}
               </p>
+              {technicianName && (
+                <div className="flex items-center gap-1 mt-1">
+                  <User className="w-3 h-3 text-slate-400" />
+                  <span className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                    {technicianName}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         </CardContent>
@@ -92,6 +102,14 @@ export function ServiceCard({ service, onClick }: ServiceCardProps) {
             <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
               {clientName}
             </p>
+            {technicianName && (
+              <div className="flex items-center gap-1 mt-1">
+                <User className="w-3 h-3 text-slate-400" />
+                <span className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                  {technicianName}
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </div>

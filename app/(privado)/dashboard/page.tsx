@@ -1,54 +1,56 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Plus, Briefcase } from "lucide-react"
+import { useState, useEffect, useMemo } from "react"
+import { Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/ui/use-toast"
-import { servicesApi, settingsApi } from "@/lib/api/client"
+import { servicesApi } from "@/lib/api/client"
 import { ServiceWithRelations } from "@/lib/types/database"
-import { ServiceFilters, filterServices, countActiveFilters, clearFilters } from "@/lib/utils/filters"
-import { ChartType, FIXED_CHART, isTimeBasedChart } from "@/lib/utils/charts"
-import { ChartSelector } from "@/components/shared/chart-selector"
-import { ChartWrapper } from "@/components/dashboard/chart-wrapper"
 import { ServiceCard } from "@/components/services/service-card"
-import { ServiceModal } from "@/components/services/service-modal"
+import { ServiceSheet } from "@/components/services/service-sheet"
 import { ServiceWizard } from "@/components/services/service-wizard"
-import { FiltersPanel } from "@/components/shared/filters-panel"
 import { LoadingSpinner } from "@/components/shared/loading-spinner"
-import { EmptyState } from "@/components/shared/empty-state"
 import { ConfirmDialog } from "@/components/shared/confirm-dialog"
+import { WalletStats } from "@/components/dashboard/wallet-stats"
+import { RevenueChart } from "@/components/dashboard/revenue-chart"
 
 export default function DashboardPage() {
   const { toast } = useToast()
   const [loading, setLoading] = useState(true)
+  
+  // Fallback de segurança: desativar loading após 35 segundos
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setLoading(false)
+    }, 35000)
+    
+    return () => clearTimeout(timeout)
+  }, [])
   const [services, setServices] = useState<ServiceWithRelations[]>([])
-  const [filteredServices, setFilteredServices] = useState<ServiceWithRelations[]>([])
-  const [filters, setFilters] = useState<ServiceFilters>({})
   const [showServiceWizard, setShowServiceWizard] = useState(false)
-  const [showServiceModal, setShowServiceModal] = useState(false)
+  const [selectedService, setSelectedService] = useState<ServiceWithRelations | null>(null)
+  const [showServiceSheet, setShowServiceSheet] = useState(false)
   const [editingService, setEditingService] = useState<ServiceWithRelations | null>(null)
   const [deletingService, setDeletingService] = useState<ServiceWithRelations | null>(null)
-  const [clients, setClients] = useState<Array<{ id: string; name: string }>>([])
-  const [technicians, setTechnicians] = useState<
-    Array<{ id: string; name: string; nickname: string | null }>
-  >([])
-  const [taxRate, setTaxRate] = useState<number>(0)
-  // Gráficos selecionados (padrão: gráfico fixo + 4 KPIs iniciais)
-  const [selectedCharts, setSelectedCharts] = useState<ChartType[]>([
-    'kpi-lucro-liquido', // Fixo - sempre presente
-    'kpi-receita-bruta',
-    'kpi-sem-custos',
-    'kpi-custo-operacional',
-    'kpi-impostos'
-  ])
 
   // Carregar serviços
   const loadServices = async () => {
     try {
       setLoading(true)
-      const data = await servicesApi.getAll()
-      setServices(data)
+      // Timeout de segurança (30 segundos)
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Timeout ao carregar serviços")), 30000)
+      )
+      
+      const data = await Promise.race([
+        servicesApi.getAll(),
+        timeoutPromise
+      ]) as ServiceWithRelations[]
+      
+      setServices(data || [])
     } catch (error: any) {
+      console.error("Erro ao carregar serviços:", error)
+      setServices([]) // Garantir que sempre tenha um array vazio
       toast({
         variant: "destructive",
         title: "Erro ao carregar serviços",
@@ -59,46 +61,88 @@ export default function DashboardPage() {
     }
   }
 
-  // Carregar clientes e técnicos para filtros
-  const loadFilterData = async () => {
-    try {
-      const [clientsData, techniciansData] = await Promise.all([
-        servicesApi.getClients(),
-        servicesApi.getTechnicians(),
-      ])
-      setClients(clientsData)
-      setTechnicians(techniciansData)
-    } catch (error) {
-      console.error("Erro ao carregar dados para filtros:", error)
-    }
-  }
-
-  // Carregar taxa de imposto
-  const loadTaxRate = async () => {
-    try {
-      const taxRateData = await settingsApi.getByKeySafe("tax_rate")
-      setTaxRate(taxRateData?.value || 0)
-    } catch (error) {
-      console.error("Erro ao carregar taxa de imposto:", error)
-    }
-  }
-
   // Carregar dados iniciais
   useEffect(() => {
-    loadServices()
-    loadFilterData()
-    loadTaxRate()
+    let mounted = true
+    
+    const loadData = async () => {
+      if (!mounted) return
+      await loadServices()
+    }
+    
+    loadData()
+    
+    return () => {
+      mounted = false
+    }
   }, [])
 
-  // Aplicar filtros quando mudarem
-  useEffect(() => {
-    const filtered = filterServices(services, filters)
-    // Ordenar por data (mais recentes primeiro)
-    filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    setFilteredServices(filtered)
-  }, [services, filters])
+  // Calcular KPIs
+  const { balance, pending, expenses } = useMemo(() => {
+    let balanceValue = 0
+    let pendingValue = 0
+    let expensesValue = 0
 
-  // Não precisamos mais calcular KPIs aqui, será feito no ChartWrapper
+    services.forEach((service) => {
+      const grossValue = Number(service.gross_value) || 0
+      const operationalCost = Number(service.operational_cost) || 0
+      const paymentStatus = service.payment_status
+
+      // Balance: Net Cash (Gross Paid - Costs)
+      if (paymentStatus === 'pago') {
+        balanceValue += grossValue - operationalCost
+      }
+
+      // Pending: Sum of gross_value where payment_status === 'pendente'
+      if (paymentStatus === 'pendente') {
+        pendingValue += grossValue
+      }
+
+      // Expenses: Sum of all operational_cost
+      expensesValue += operationalCost
+    })
+
+    return {
+      balance: balanceValue,
+      pending: pendingValue,
+      expenses: expensesValue,
+    }
+  }, [services])
+
+  // Preparar dados do gráfico (últimos 6 meses)
+  const chartData = useMemo(() => {
+    const months: { [key: string]: number } = {}
+    const now = new Date()
+    
+    // Inicializar últimos 6 meses com 0
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      const monthKey = date.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })
+      months[monthKey] = 0
+    }
+
+    // Agrupar serviços por mês
+    services.forEach((service) => {
+      const serviceDate = new Date(service.date)
+      const monthKey = serviceDate.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })
+      
+      if (months.hasOwnProperty(monthKey)) {
+        months[monthKey] += Number(service.gross_value) || 0
+      }
+    })
+
+    return Object.entries(months).map(([name, value]) => ({
+      name,
+      value: Number(value.toFixed(2)),
+    }))
+  }, [services])
+
+  // Serviços recentes (últimos 5)
+  const recentServices = useMemo(() => {
+    return [...services]
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 5)
+  }, [services])
 
   // Handlers
   const handleCreateService = () => {
@@ -106,9 +150,23 @@ export default function DashboardPage() {
     setShowServiceWizard(true)
   }
 
-  const handleEditService = (service: ServiceWithRelations) => {
-    setEditingService(service)
-    setShowServiceModal(true)
+  const handleCardClick = (service: ServiceWithRelations) => {
+    setSelectedService(service)
+    setShowServiceSheet(true)
+  }
+  
+  const handleEdit = () => {
+    if (selectedService) {
+      setEditingService(selectedService)
+      setShowServiceSheet(false)
+      setShowServiceWizard(true)
+    }
+  }
+  
+  const handleDelete = () => {
+    if (selectedService) {
+      setDeletingService(selectedService)
+    }
   }
 
   const handleDeleteService = (service: ServiceWithRelations) => {
@@ -124,7 +182,12 @@ export default function DashboardPage() {
         title: "Serviço excluído!",
         description: "O serviço foi excluído com sucesso.",
       })
-      loadServices()
+      await loadServices()
+      // Fechar sheet se o serviço excluído estava selecionado
+      if (selectedService?.id === deletingService.id) {
+        setShowServiceSheet(false)
+        setSelectedService(null)
+      }
       setDeletingService(null)
     } catch (error: any) {
       toast({
@@ -135,167 +198,118 @@ export default function DashboardPage() {
     }
   }
 
-  const handleServiceModalSuccess = () => {
-    loadServices()
-    setShowServiceModal(false)
-    setEditingService(null)
-  }
-
   const handleServiceWizardSuccess = () => {
     loadServices()
     setShowServiceWizard(false)
-  }
-
-  const handleFiltersChange = (newFilters: ServiceFilters) => {
-    setFilters(newFilters)
-  }
-
-  const handleClearFilters = () => {
-    setFilters(clearFilters())
-  }
-
-  // Garantir que o gráfico fixo sempre esteja selecionado
-  useEffect(() => {
-    if (!selectedCharts.includes(FIXED_CHART)) {
-      setSelectedCharts([FIXED_CHART, ...selectedCharts])
+    setEditingService(null)
+    // Se estava editando o serviço selecionado, atualizar o sheet
+    if (editingService && selectedService?.id === editingService.id) {
+      // Recarregar o serviço selecionado
+      servicesApi
+        .getById(editingService.id)
+        .then((updated) => {
+          setSelectedService(updated)
+        })
+        .catch(() => {
+          // Se não conseguir carregar, fechar o sheet
+          setShowServiceSheet(false)
+          setSelectedService(null)
+        })
     }
-  }, [selectedCharts])
+  }
 
-  const activeFiltersCount = countActiveFilters(filters)
-  const totalServices = services.length
-  const showingServices = filteredServices.length
+  // Formatar data atual
+  const currentDate = useMemo(() => {
+    return new Date().toLocaleDateString('pt-BR', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    })
+  }, [])
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header com Filtros e Novo Serviço */}
+      {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
             Dashboard
           </h2>
-          <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-            {activeFiltersCount > 0
-              ? `Mostrando ${showingServices} de ${totalServices} serviços`
-              : `${totalServices} serviço${totalServices !== 1 ? "s" : ""} cadastrado${totalServices !== 1 ? "s" : ""}`}
+          <p className="text-sm text-slate-600 dark:text-slate-400 mt-1 capitalize">
+            {currentDate}
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <FiltersPanel
-            filters={filters}
-            onFiltersChange={handleFiltersChange}
-            onClear={handleClearFilters}
-            clients={clients}
-            technicians={technicians}
-          />
-          <ChartSelector
-            selectedCharts={selectedCharts}
-            onChartsChange={setSelectedCharts}
-          />
-          <Button
-            onClick={handleCreateService}
-            className="gap-2 bg-blue-600 hover:bg-blue-700 text-white"
-          >
-            <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">Novo Serviço</span>
-          </Button>
-        </div>
+        <Button
+          onClick={handleCreateService}
+          className="hidden md:flex gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+        >
+          <Plus className="h-4 w-4" />
+          <span>Novo Serviço</span>
+        </Button>
       </div>
 
-      {/* Gráficos Selecionados */}
-      {selectedCharts.length > 0 ? (
-        <div className="space-y-6">
-          {/* Outros gráficos selecionados - todos ocupam 1 coluna */}
-          {selectedCharts.filter((id) => id !== FIXED_CHART).length > 0 && (
-            <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
-              {selectedCharts
-                .filter((id) => id !== FIXED_CHART)
-                .map((chartType) => (
-                  <ChartWrapper
-                    key={chartType}
-                    chartType={chartType}
-                    services={filteredServices}
-                    taxRate={taxRate}
-                  />
-                ))}
-            </div>
-          )}
-          
-          {/* Gráfico Fixo - Lucro Líquido (sempre embaixo em destaque) */}
-          <ChartWrapper
-            chartType={FIXED_CHART}
-            services={filteredServices}
-            taxRate={taxRate}
-          />
-        </div>
-      ) : (
-        <div className="p-8 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-lg text-center">
-          <p className="text-slate-600 dark:text-slate-400 mb-2">
-            Nenhum gráfico selecionado
-          </p>
-          <p className="text-sm text-slate-500 dark:text-slate-500">
-            Clique no botão "Gráficos" para selecionar até 4 gráficos para exibir
-          </p>
-        </div>
-      )}
-
-      {/* Lista de Serviços */}
+      {/* Loading State */}
       {loading ? (
         <div className="flex items-center justify-center min-h-[400px]">
           <LoadingSpinner size="lg" text="Carregando serviços..." />
         </div>
-      ) : filteredServices.length === 0 ? (
-        <EmptyState
-          title="Nenhum serviço encontrado"
-          description={
-            activeFiltersCount > 0
-              ? "Tente ajustar os filtros para ver mais resultados."
-              : "Comece criando seu primeiro serviço."
-          }
-          icon={Briefcase}
-          actionLabel={activeFiltersCount > 0 ? undefined : "Criar Serviço"}
-          onAction={activeFiltersCount > 0 ? undefined : handleCreateService}
-        />
       ) : (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-              Serviços
-            </h3>
+        <>
+          {/* Section 1: Wallet Stats */}
+          <div>
+            <WalletStats balance={balance} pending={pending} expenses={expenses} />
           </div>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {filteredServices.map((service) => (
-              <ServiceCard
-                key={service.id}
-                service={service}
-                onEdit={() => handleEditService(service)}
-                onDelete={() => handleDeleteService(service)}
-              />
-            ))}
+
+          {/* Section 2: Revenue Chart */}
+          <div>
+            <RevenueChart data={chartData} />
           </div>
-        </div>
+
+          {/* Section 3: Recent Activity */}
+          {recentServices.length > 0 && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                Atividade Recente
+              </h3>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {recentServices.map((service) => (
+                  <ServiceCard
+                    key={service.id}
+                    service={service}
+                    onClick={() => handleCardClick(service)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {/* FAB para Mobile */}
       <Button
         onClick={handleCreateService}
-        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg lg:hidden bg-blue-600 hover:bg-blue-700 text-white z-50"
+        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg md:hidden bg-blue-600 hover:bg-blue-700 text-white z-50"
         size="icon"
       >
         <Plus className="h-6 w-6" />
       </Button>
 
-      {/* Modais */}
+      {/* Service Sheet */}
+      <ServiceSheet
+        open={showServiceSheet}
+        onOpenChange={setShowServiceSheet}
+        service={selectedService}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+      />
+
+      {/* Service Wizard */}
       <ServiceWizard
         open={showServiceWizard}
         onOpenChange={setShowServiceWizard}
         onSuccess={handleServiceWizardSuccess}
-      />
-
-      <ServiceModal
-        open={showServiceModal}
-        onOpenChange={setShowServiceModal}
-        onSuccess={handleServiceModalSuccess}
-        service={editingService}
+        serviceToEdit={editingService}
       />
 
       <ConfirmDialog
