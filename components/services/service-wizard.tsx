@@ -41,7 +41,7 @@ export function ServiceWizard({
     .object({
       date: z.string().min(1, "Data é obrigatória"),
       start_time: z.string().optional(),
-      description: z.string().optional(),
+      description: z.string().min(1, "Descrição é obrigatória"),
       location: z.string().min(1, "Local é obrigatório"),
       client_id: z.string().min(1, "Cliente é obrigatório"),
       technician_id: z.string().min(1, "Técnico é obrigatório"),
@@ -49,7 +49,10 @@ export function ServiceWizard({
         .string()
         .min(1, "Valor bruto é obrigatório")
         .regex(/^\d*([.,]\d{0,2})?$/, "Use apenas números e vírgula/ponto"),
-      operational_cost: z.string().optional(),
+      operational_cost: z
+        .string()
+        .min(1, "Custo operacional é obrigatório")
+        .regex(/^\d*([.,]\d{0,2})?$/, "Use apenas números e vírgula/ponto"),
       payment_status: z.enum(["pendente", "pago"]),
       payment_date: z.string().optional(),
     })
@@ -151,9 +154,9 @@ export function ServiceWizard({
   const progress = (currentStep / totalSteps) * 100
 
   const stepFields: Record<number, FieldPath<FormValues>[]> = {
-    1: ["date", "start_time", "location", "description"],
+    1: ["date", "location", "description"],
     2: ["client_id", "technician_id"],
-    3: ["gross_value", "payment_status", "payment_date"],
+    3: ["gross_value", "operational_cost", "payment_status", "payment_date"],
   }
 
   const paymentStatus = watch("payment_status")
@@ -316,6 +319,9 @@ export function ServiceWizard({
                       className="resize-none"
                       {...register("description")}
                     />
+                    {errors.description && (
+                      <p className="text-sm text-red-500">{errors.description.message}</p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -433,6 +439,11 @@ export function ServiceWizard({
                       className="h-12 md:h-10"
                       {...register("operational_cost")}
                     />
+                    {errors.operational_cost && (
+                      <p className="text-sm text-red-500">
+                        {errors.operational_cost.message}
+                      </p>
+                    )}
                   </div>
 
                   {/* Payment Status Toggle */}
