@@ -1,6 +1,7 @@
 "use client"
 
 import { DayCell } from "./day-cell"
+import { ServiceWithRelations } from "@/lib/types/database"
 
 export interface CalendarDay {
   day: number | null
