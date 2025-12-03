@@ -1,9 +1,6 @@
 "use client"
 
 import { DayCell } from "./day-cell"
-import { DayView } from "./day-view"
-import { cn } from "@/lib/utils"
-import { ServiceWithRelations } from "@/lib/types/database"
 
 export interface CalendarDay {
   day: number | null
@@ -12,6 +9,8 @@ export interface CalendarDay {
   totalValue: number
   hasInvoice: boolean
   services?: ServiceWithRelations[]
+  hasPaid?: boolean
+  hasPending?: boolean
 }
 
 interface CalendarGridProps {
@@ -19,9 +18,6 @@ interface CalendarGridProps {
   days: CalendarDay[]
   selectedDate: Date | null
   onDayClick: (date: Date) => void
-  onAddService?: (date: Date) => void
-  onEditService?: (service: ServiceWithRelations) => void
-  onDeleteService?: (service: ServiceWithRelations) => void
 }
 
 export function CalendarGrid({
@@ -29,9 +25,6 @@ export function CalendarGrid({
   days,
   selectedDate,
   onDayClick,
-  onAddService,
-  onEditService,
-  onDeleteService,
 }: CalendarGridProps) {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
@@ -65,9 +58,9 @@ export function CalendarGrid({
   }
 
   return (
-    <div className="bg-white dark:bg-slate-950 h-full flex flex-col">
+    <div className="bg-white dark:bg-slate-950 flex flex-col">
       {/* Cabeçalho dos dias da semana */}
-      <div className="grid grid-cols-7 gap-0 bg-slate-50 dark:bg-slate-900 px-2 py-3 flex-shrink-0 border-t border-l border-r border-slate-200/30 dark:border-slate-700/30">
+      <div className="grid grid-cols-7 gap-0 bg-slate-50 dark:bg-slate-900 px-2 py-2 md:py-3 flex-shrink-0 border-t border-l border-r border-slate-200/30 dark:border-slate-700/30">
         {weekDays.map((day) => (
           <div
             key={day}
@@ -78,8 +71,8 @@ export function CalendarGrid({
         ))}
       </div>
 
-      {/* Grid do calendário - Ocupa o espaço restante */}
-      <div className="grid grid-cols-7 gap-0 flex-1 auto-rows-fr border-t border-l border-slate-200/30 dark:border-slate-700/30">
+      {/* Grid do calendário */}
+      <div className="grid grid-cols-7 gap-0 border-t border-l border-slate-200/30 dark:border-slate-700/30">
         {days.map((calendarDay, index) => {
           const date = calendarDay.date
           const isSelected = isSelectedDay(date)
@@ -101,18 +94,12 @@ export function CalendarGrid({
             )
           }
 
-          const dayServices = calendarDay.services || []
-
           return (
-            <DayView
+            <button
               key={index}
-              date={date}
-              services={dayServices}
-              totalValue={calendarDay.totalValue}
-              onAddService={onAddService || (() => {})}
-              onEditService={onEditService}
-              onDeleteService={onDeleteService}
-              onDayClick={() => onDayClick(date)}
+              type="button"
+              onClick={() => onDayClick(date)}
+              className="w-full text-left"
             >
               <DayCell
                 day={calendarDay.day}
@@ -122,8 +109,10 @@ export function CalendarGrid({
                 totalValue={calendarDay.totalValue}
                 hasInvoice={calendarDay.hasInvoice}
                 isOtherMonth={isOther}
+                hasPaid={calendarDay.hasPaid}
+                hasPending={calendarDay.hasPending}
               />
-            </DayView>
+            </button>
           )
         })}
       </div>

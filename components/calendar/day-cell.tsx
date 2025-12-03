@@ -12,6 +12,8 @@ interface DayCellProps {
   totalValue: number
   hasInvoice: boolean
   isOtherMonth?: boolean
+  hasPaid?: boolean
+  hasPending?: boolean
   onClick?: () => void
   showPreview?: boolean // Controla se mostra preview (contador, valor, ícone) - padrão true
 }
@@ -24,25 +26,12 @@ export function DayCell({
   totalValue,
   hasInvoice,
   isOtherMonth = false,
+  hasPaid = false,
+  hasPending = false,
   onClick,
   showPreview = true, // Por padrão mostra preview
 }: DayCellProps) {
   const hasServices = serviceCount > 0
-  const isClickable = onClick // Sempre clicável se tiver onClick
-
-  // Cores do indicador baseado na quantidade
-  const getIndicatorColor = (count: number) => {
-    if (count <= 2) return "bg-emerald-500"
-    if (count <= 5) return "bg-amber-500"
-    return "bg-red-500"
-  }
-
-  // Cores do indicador quando selecionado (escuro para contraste)
-  const getSelectedIndicatorColor = (count: number) => {
-    if (count <= 2) return "bg-emerald-700"
-    if (count <= 5) return "bg-amber-700"
-    return "bg-red-700"
-  }
 
   if (day === null) {
     return (
@@ -53,25 +42,25 @@ export function DayCell({
   return (
     <div
       className={cn(
-        "relative min-h-[64px] p-2 transition-all duration-200 ease-in-out",
+        "relative min-h-[48px] md:min-h-[64px] p-1.5 md:p-2 transition-all duration-200 ease-in-out",
         "flex flex-col items-center justify-start w-full",
         "border-r border-b border-slate-200/30 dark:border-slate-700/30",
-        "hover:scale-105 hover:shadow-md active:scale-95",
+        "hover:scale-105 hover:shadow-md active:scale-95 cursor-pointer",
         isOtherMonth && "opacity-40",
         isSelected
-          ? "bg-blue-500 dark:bg-blue-600 shadow-lg scale-105" // Cápsula vertical quando selecionado
+          ? "bg-blue-500 dark:bg-blue-600 shadow-lg scale-105"
           : "bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800",
         isToday && !isSelected && "ring-2 ring-blue-500 dark:ring-blue-400"
       )}
     >
-      {/* Ponto indicador de eventos (sutil, centralizado embaixo do número) */}
-      {hasServices && (
+      {/* Status Dot (verde=pago, amarelo=pendente) - Prioridade: verde se tiver pago */}
+      {hasServices && (hasPaid || hasPending) && (
         <div
           className={cn(
-            "absolute top-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full",
+            "absolute top-1.5 right-1.5 w-2 h-2 rounded-full",
             isSelected
-              ? getSelectedIndicatorColor(serviceCount)
-              : getIndicatorColor(serviceCount)
+              ? (hasPaid ? "bg-green-700" : hasPending ? "bg-yellow-700" : "bg-white")
+              : (hasPaid ? "bg-green-500" : hasPending ? "bg-yellow-500" : "bg-slate-400")
           )}
         />
       )}
@@ -91,9 +80,9 @@ export function DayCell({
         {day}
       </div>
 
-      {/* Informações adicionais (apenas se houver serviços, não estiver selecionado E showPreview for true) */}
+      {/* Informações adicionais (apenas no desktop, se houver serviços e não estiver selecionado) */}
       {hasServices && !isSelected && showPreview && (
-        <div className="mt-1 space-y-0.5 w-full">
+        <div className="mt-1 space-y-0.5 w-full hidden md:block">
           {/* Contador */}
           <div className="text-[10px] text-slate-600 dark:text-slate-400 text-center font-medium">
             {serviceCount}

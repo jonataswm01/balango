@@ -28,9 +28,9 @@ export function ClientCard({
   onToggleActive,
 }: ClientCardProps) {
   return (
-    <Card className="border-slate-200 hover:shadow-md transition-shadow">
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between gap-4 w-full">
+    <Card className="h-full border-slate-200 hover:shadow-md transition-shadow flex flex-col">
+      <CardContent className="p-4 flex-1 flex flex-col">
+        <div className="flex items-center justify-between gap-4 w-full flex-1">
           {/* Grupo de Informações */}
           <div className="flex-1 space-y-1 min-w-0">
             <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">

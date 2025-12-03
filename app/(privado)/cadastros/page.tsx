@@ -397,7 +397,7 @@ export default function CadastrosPage() {
             />
           ) : (
             // Grid de Cards de Clientes - Responsivo e centralizado
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 max-w-6xl mx-auto justify-items-center">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 max-w-6xl mx-auto w-full items-stretch">
               {filteredClients.map((client) => (
                 <ClientCard
                   key={client.id}
@@ -439,7 +439,7 @@ export default function CadastrosPage() {
             />
           ) : (
             // Grid de Cards de Técnicos - Responsivo e centralizado
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 max-w-6xl mx-auto justify-items-center">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 max-w-6xl mx-auto w-full items-stretch">
               {filteredTechnicians.map((technician) => (
                 <TechnicianCard
                   key={technician.id}

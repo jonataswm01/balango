@@ -90,9 +90,10 @@ export default function DashboardPage() {
       const taxAmount = Number(service.tax_amount) || 0
       const paymentStatus = service.payment_status
 
-      // Balance: Net Cash (Gross Paid - Costs)
+      // Balance: True Net Cash (Gross Paid - Operational Costs - Paid Taxes)
+      // Only deduct taxes for paid services (tax is withheld/paid upon receipt)
       if (paymentStatus === 'pago') {
-        balanceValue += grossValue - operationalCost
+        balanceValue += grossValue - operationalCost - taxAmount
       }
 
       // Pending: Sum of gross_value where payment_status === 'pendente'

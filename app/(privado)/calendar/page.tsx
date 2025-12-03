@@ -1,13 +1,17 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
+import { Plus, Briefcase } from "lucide-react"
 import { CalendarHeader } from "@/components/calendar/calendar-header"
 import { CalendarGrid, type CalendarDay } from "@/components/calendar/calendar-grid"
 import { LoadingSpinner } from "@/components/shared/loading-spinner"
+import { EmptyState } from "@/components/shared/empty-state"
+import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/ui/use-toast"
 import { servicesApi } from "@/lib/api/client"
 import { ServiceWithRelations } from "@/lib/types/database"
-import { ServiceModal } from "@/components/services/service-modal"
+import { ServiceCard } from "@/components/services/service-card"
+import { ServiceSheet } from "@/components/services/service-sheet"
 import { ServiceWizard } from "@/components/services/service-wizard"
 import { ConfirmDialog } from "@/components/shared/confirm-dialog"
 
@@ -32,7 +36,8 @@ export default function CalendarPage() {
   const [servicesByDay, setServicesByDay] = useState<DayServices>({})
   const [allServices, setAllServices] = useState<ServiceWithRelations[]>([])
   const [showServiceWizard, setShowServiceWizard] = useState(false)
-  const [showServiceModal, setShowServiceModal] = useState(false)
+  const [selectedService, setSelectedService] = useState<ServiceWithRelations | null>(null)
+  const [showServiceSheet, setShowServiceSheet] = useState(false)
   const [editingService, setEditingService] = useState<ServiceWithRelations | null>(null)
   const [deletingService, setDeletingService] = useState<ServiceWithRelations | null>(null)
   const [serviceDate, setServiceDate] = useState<Date | null>(null)
@@ -73,16 +78,23 @@ export default function CalendarPage() {
   }, [currentDate])
 
   // Handlers
-  const handleAddService = (date: Date) => {
-    setServiceDate(date)
-    setEditingService(null)
-    setShowServiceWizard(true)
+  const handleCardClick = (service: ServiceWithRelations) => {
+    setSelectedService(service)
+    setShowServiceSheet(true)
   }
-
-  const handleEditService = (service: ServiceWithRelations) => {
-    setEditingService(service)
-    setServiceDate(null)
-    setShowServiceModal(true)
+  
+  const handleEdit = () => {
+    if (selectedService) {
+      setEditingService(selectedService)
+      setShowServiceSheet(false)
+      setShowServiceWizard(true)
+    }
+  }
+  
+  const handleDelete = () => {
+    if (selectedService) {
+      setDeletingService(selectedService)
+    }
   }
 
   const handleDeleteService = (service: ServiceWithRelations) => {
@@ -103,6 +115,11 @@ export default function CalendarPage() {
       const month = currentDate.getMonth()
       await loadMonthServices(year, month)
       await loadAllServices()
+      // Fechar sheet se o serviço excluído estava selecionado
+      if (selectedService?.id === deletingService.id) {
+        setShowServiceSheet(false)
+        setSelectedService(null)
+      }
       setDeletingService(null)
     } catch (error: any) {
       toast({
@@ -113,30 +130,29 @@ export default function CalendarPage() {
     }
   }
 
-  const handleServiceModalSuccess = () => {
-    // Recarregar dados
+  const handleServiceWizardSuccess = async () => {
     const year = currentDate.getFullYear()
     const month = currentDate.getMonth()
-    loadMonthServices(year, month)
-    loadAllServices()
-    setShowServiceModal(false)
+    
+    // Recarregar dados do calendário
+    await loadMonthServices(year, month)
+    await loadAllServices()
+    
+    setShowServiceWizard(false)
     setEditingService(null)
     setServiceDate(null)
-  }
-
-  const handleServiceWizardSuccess = () => {
-    const year = currentDate.getFullYear()
-    const month = currentDate.getMonth()
-    loadMonthServices(year, month)
-    loadAllServices()
-    setShowServiceWizard(false)
-    setServiceDate(null)
-  }
-
-  const handleWizardOpenChange = (open: boolean) => {
-    setShowServiceWizard(open)
-    if (!open) {
-      setServiceDate(null)
+    
+    // Se estava editando o serviço selecionado, atualizar o sheet
+    if (editingService && selectedService?.id === editingService.id) {
+      try {
+        const updated = await servicesApi.getById(editingService.id)
+        setSelectedService(updated)
+        // Reabrir o sheet com dados atualizados
+        setShowServiceSheet(true)
+      } catch {
+        setShowServiceSheet(false)
+        setSelectedService(null)
+      }
     }
   }
 
@@ -192,6 +208,10 @@ export default function CalendarPage() {
         })
         .filter((s): s is ServiceWithRelations => s !== undefined)
       
+      // Determinar status de pagamento para o dot
+      const hasPaid = fullServices.some((s) => s.payment_status === 'pago')
+      const hasPending = fullServices.some((s) => s.payment_status === 'pendente')
+      
       days.push({
         day,
         date,
@@ -199,6 +219,8 @@ export default function CalendarPage() {
         totalValue,
         hasInvoice,
         services: fullServices,
+        hasPaid,
+        hasPending,
       })
     }
     
@@ -239,9 +261,30 @@ export default function CalendarPage() {
     setSelectedDate(date)
   }
 
+  // Serviços da data selecionada
+  const selectedDateServices = useMemo(() => {
+    if (!selectedDate) return []
+    
+    const selectedKey = selectedDate.getDate().toString()
+    const dayServices = servicesByDay[selectedKey] || []
+    
+    return dayServices
+      .map((dayService) => {
+        return allServices.find((s) => s.id === dayService.id)
+      })
+      .filter((s): s is ServiceWithRelations => s !== undefined)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  }, [selectedDate, servicesByDay, allServices])
+
+  const handleCreateService = () => {
+    setEditingService(null)
+    setServiceDate(selectedDate || new Date())
+    setShowServiceWizard(true)
+  }
+
   return (
     <div className="h-full flex flex-col bg-white dark:bg-slate-950 overflow-hidden">
-      {/* Navegação do Calendário (setas e nome do mês) */}
+      {/* Navegação do Calendário */}
       <CalendarHeader
         currentDate={currentDate}
         onPreviousMonth={handlePreviousMonth}
@@ -249,10 +292,10 @@ export default function CalendarPage() {
         onToday={handleToday}
       />
 
-      {/* Calendário ocupando o resto da tela */}
-      <div className="flex-1 overflow-y-auto">
+      {/* Top Section: Calendar Grid */}
+      <div className="flex-shrink-0">
         {loading ? (
-          <div className="flex items-center justify-center h-full">
+          <div className="flex items-center justify-center min-h-[400px]">
             <LoadingSpinner size="lg" text="Carregando calendário..." />
           </div>
         ) : (
@@ -261,30 +304,107 @@ export default function CalendarPage() {
             days={calendarDays}
             selectedDate={selectedDate}
             onDayClick={handleDayClick}
-            onAddService={handleAddService}
-            onEditService={handleEditService}
-            onDeleteService={handleDeleteService}
           />
         )}
       </div>
 
+      {/* Bottom Section: Events for Selected Date */}
+      <div className="flex-1 overflow-y-auto border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
+        <div className="p-4 md:p-6">
+          {!selectedDate ? (
+            <div className="flex items-center justify-center min-h-[200px]">
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                Selecione uma data para ver os eventos
+              </p>
+            </div>
+          ) : selectedDateServices.length === 0 ? (
+            <EmptyState
+              title="Nenhum evento nesta data"
+              description={`Não há serviços cadastrados para ${selectedDate.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })}.`}
+              icon={Briefcase}
+              actionLabel="Adicionar Serviço"
+              onAction={handleCreateService}
+            />
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                    Eventos do Dia
+                  </h3>
+                  <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                    {selectedDate.toLocaleDateString('pt-BR', { 
+                      weekday: 'long', 
+                      day: 'numeric', 
+                      month: 'long', 
+                      year: 'numeric' 
+                    })}
+                  </p>
+                </div>
+                <Button
+                  onClick={handleCreateService}
+                  className="hidden md:flex gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  <Plus className="h-4 w-4" />
+                  Novo Serviço
+                </Button>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {selectedDateServices.map((service) => (
+                  <ServiceCard
+                    key={service.id}
+                    service={service}
+                    onClick={() => handleCardClick(service)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* FAB para Mobile */}
+      {selectedDate && (
+        <Button
+          onClick={handleCreateService}
+          className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg md:hidden bg-blue-600 hover:bg-blue-700 text-white z-50"
+          size="icon"
+        >
+          <Plus className="h-6 w-6" />
+        </Button>
+      )}
+
+      {/* Service Sheet */}
+      <ServiceSheet
+        open={showServiceSheet}
+        onOpenChange={(open) => {
+          setShowServiceSheet(open)
+          if (!open) {
+            // Limpar selectedService quando fechar para evitar dados desatualizados
+            setSelectedService(null)
+          }
+        }}
+        service={selectedService}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+      />
+
+      {/* Service Wizard */}
       <ServiceWizard
         open={showServiceWizard}
-        onOpenChange={handleWizardOpenChange}
+        onOpenChange={(open) => {
+          setShowServiceWizard(open)
+          if (!open) {
+            setServiceDate(null)
+            setEditingService(null)
+          }
+        }}
         onSuccess={handleServiceWizardSuccess}
         initialDate={serviceDate ? serviceDate.toISOString().split("T")[0] : undefined}
+        serviceToEdit={editingService}
       />
 
-      {/* Modal de criar/editar serviço */}
-      <ServiceModal
-        open={showServiceModal}
-        onOpenChange={setShowServiceModal}
-        onSuccess={handleServiceModalSuccess}
-        service={editingService}
-        initialDate={serviceDate ? serviceDate.toISOString().split("T")[0] : undefined}
-      />
-
-      {/* Dialog de confirmação de exclusão */}
+      {/* Confirm Delete Dialog */}
       <ConfirmDialog
         open={!!deletingService}
         onOpenChange={(open) => !open && setDeletingService(null)}
