@@ -309,7 +309,11 @@ export default function DashboardPage() {
 
           {/* Section 2: Revenue Chart */}
           <div>
-            <RevenueChart data={chartData} />
+            <RevenueChart 
+              data={chartData} 
+              startDate={dateRange?.startDate}
+              endDate={dateRange?.endDate}
+            />
           </div>
 
           {/* Section 3: Recent Activity */}

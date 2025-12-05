@@ -78,11 +78,8 @@ export function DateRangeFilter({
   defaultStartDate,
   defaultEndDate,
 }: DateRangeFilterProps) {
-  // Carregar do localStorage ou usar padrão
+  // Estado inicial com valores padrão (sem acessar localStorage no SSR)
   const [dateRange, setDateRange] = useState<DateRange>(() => {
-    const stored = loadDateRangeFromStorage()
-    if (stored) return stored
-    
     return {
       startDate: defaultStartDate || getDefaultDateRange().startDate,
       endDate: defaultEndDate || getDefaultDateRange().endDate,
@@ -91,10 +88,17 @@ export function DateRangeFilter({
   
   const [isOpen, setIsOpen] = useState(false)
 
-  // Notificar mudanças quando o componente montar (apenas uma vez)
+  // Carregar do localStorage e notificar após o mount (apenas no cliente)
   useEffect(() => {
-    // Apenas notificar no mount inicial com o valor carregado
-    onDateRangeChange(dateRange)
+    // Carregar do localStorage apenas no cliente
+    const stored = loadDateRangeFromStorage()
+    if (stored) {
+      setDateRange(stored)
+      onDateRangeChange(stored)
+    } else {
+      // Se não houver no localStorage, usar o valor padrão e notificar
+      onDateRangeChange(dateRange)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []) // Apenas no mount
 

@@ -6,18 +6,51 @@ import { formatCurrency } from "@/lib/utils"
 interface RevenueData {
   name: string
   value: number
+  isFirst?: boolean
+  isLast?: boolean
+  day?: number
 }
 
 interface RevenueChartProps {
   data: RevenueData[]
+  startDate?: string
+  endDate?: string
 }
 
-const CustomTooltip = ({ active, payload }: any) => {
+interface CustomTooltipProps {
+  active?: boolean
+  payload?: any[]
+  data?: RevenueData[]
+  startDate?: string
+  endDate?: string
+}
+
+const CustomTooltip = ({ active, payload, data, startDate, endDate }: CustomTooltipProps) => {
   if (active && payload && payload.length) {
+    const payloadData = payload[0]?.payload
+    const name = payloadData?.name || ''
+    
+    // Encontrar o índice do item atual
+    const currentIndex = data?.findIndex(item => item.name === name) ?? -1
+    const isFirst = currentIndex === 0
+    const isLast = currentIndex === (data?.length ?? 0) - 1
+    
+    // Formatar o nome com dia se for primeiro ou último
+    let displayName = name
+    if (isFirst && startDate) {
+      const date = new Date(startDate)
+      const day = date.getDate()
+      displayName = `${day} ${name}`
+    } else if (isLast && endDate) {
+      const date = new Date(endDate)
+      const day = date.getDate()
+      displayName = `${day} ${name}`
+    }
+    
     return (
       <div className="bg-white dark:bg-slate-800 p-3 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg">
         <p className="font-semibold text-slate-900 dark:text-slate-100 mb-1">
-          {payload[0]?.payload?.name}
+          {displayName}
         </p>
         <p className="text-sm text-blue-600 dark:text-blue-400 font-medium">
           {formatCurrency(payload[0]?.value || 0)}
@@ -28,13 +61,35 @@ const CustomTooltip = ({ active, payload }: any) => {
   return null
 }
 
-export function RevenueChart({ data }: RevenueChartProps) {
+export function RevenueChart({ data, startDate, endDate }: RevenueChartProps) {
   if (data.length === 0) {
     return (
       <div className="h-[250px] flex items-center justify-center text-slate-400 dark:text-slate-500 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-lg">
         <p className="text-sm">Sem dados para exibir</p>
       </div>
     )
+  }
+
+  // Função para formatar o label do eixo X (adicionar dia no primeiro e último)
+  const formatXAxisLabel = (tickItem: string, index: number) => {
+    if (data.length === 0) return tickItem
+    
+    const isFirst = index === 0
+    const isLast = index === data.length - 1
+    
+    if (isFirst && startDate) {
+      const date = new Date(startDate)
+      const day = date.getDate()
+      return `${day} ${tickItem}`
+    }
+    
+    if (isLast && endDate) {
+      const date = new Date(endDate)
+      const day = date.getDate()
+      return `${day} ${tickItem}`
+    }
+    
+    return tickItem
   }
 
   return (
@@ -53,6 +108,7 @@ export function RevenueChart({ data }: RevenueChartProps) {
             style={{ fontSize: "12px" }}
             tickLine={false}
             axisLine={false}
+            tickFormatter={formatXAxisLabel}
           />
           <YAxis
             stroke="#64748b"
@@ -66,7 +122,9 @@ export function RevenueChart({ data }: RevenueChartProps) {
               return `R$ ${value}`
             }}
           />
-          <Tooltip content={<CustomTooltip />} />
+          <Tooltip 
+            content={<CustomTooltip data={data} startDate={startDate} endDate={endDate} />} 
+          />
           <Area
             type="monotone"
             dataKey="value"
