@@ -15,6 +15,9 @@ import { getUserOrganizationId } from '@/lib/api/auth'
 /**
  * GET /api/services
  * Lista todos os serviços com relacionamentos
+ * Query params opcionais:
+ * - startDate: Data inicial (YYYY-MM-DD)
+ * - endDate: Data final (YYYY-MM-DD)
  */
 export async function GET(request: NextRequest) {
   try {
@@ -39,8 +42,13 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Buscar serviços com relacionamentos (FILTRADO POR ORGANIZAÇÃO)
-    const { data: services, error } = await supabase
+    // Obter parâmetros de query (filtro de data)
+    const { searchParams } = new URL(request.url)
+    const startDate = searchParams.get('startDate')
+    const endDate = searchParams.get('endDate')
+
+    // Construir query base
+    let query = supabase
       .from('services')
       .select(`
         *,
@@ -59,6 +67,17 @@ export async function GET(request: NextRequest) {
         )
       `)
       .eq('organization_id', organizationId)
+
+    // Aplicar filtros de data se fornecidos
+    if (startDate) {
+      query = query.gte('date', startDate)
+    }
+    if (endDate) {
+      query = query.lte('date', endDate)
+    }
+
+    // Buscar serviços com relacionamentos (FILTRADO POR ORGANIZAÇÃO E DATA)
+    const { data: services, error } = await query
       .order('date', { ascending: false })
       .order('created_at', { ascending: false })
 

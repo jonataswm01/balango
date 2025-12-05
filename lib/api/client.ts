@@ -64,9 +64,18 @@ async function request<T>(
 export const servicesApi = {
   /**
    * Lista todos os serviços
+   * @param startDate - Data inicial no formato YYYY-MM-DD (opcional)
+   * @param endDate - Data final no formato YYYY-MM-DD (opcional)
    */
-  async getAll(): Promise<ServiceWithRelations[]> {
-    return request<ServiceWithRelations[]>('/services')
+  async getAll(startDate?: string, endDate?: string): Promise<ServiceWithRelations[]> {
+    const params = new URLSearchParams()
+    if (startDate) params.append('startDate', startDate)
+    if (endDate) params.append('endDate', endDate)
+    
+    const queryString = params.toString()
+    const endpoint = queryString ? `/services?${queryString}` : '/services'
+    
+    return request<ServiceWithRelations[]>(endpoint)
   },
 
   /**

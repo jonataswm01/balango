@@ -13,6 +13,12 @@ import { LoadingSpinner } from "@/components/shared/loading-spinner"
 import { ConfirmDialog } from "@/components/shared/confirm-dialog"
 import { WalletStats } from "@/components/dashboard/wallet-stats"
 import { RevenueChart } from "@/components/dashboard/revenue-chart"
+import { DateRangeFilter } from "@/components/dashboard/date-range-filter"
+
+interface DateRange {
+  startDate: string
+  endDate: string
+}
 
 export default function DashboardPage() {
   const { toast } = useToast()
@@ -26,15 +32,17 @@ export default function DashboardPage() {
     
     return () => clearTimeout(timeout)
   }, [])
+  
   const [services, setServices] = useState<ServiceWithRelations[]>([])
+  const [dateRange, setDateRange] = useState<DateRange | null>(null)
   const [showServiceWizard, setShowServiceWizard] = useState(false)
   const [selectedService, setSelectedService] = useState<ServiceWithRelations | null>(null)
   const [showServiceSheet, setShowServiceSheet] = useState(false)
   const [editingService, setEditingService] = useState<ServiceWithRelations | null>(null)
   const [deletingService, setDeletingService] = useState<ServiceWithRelations | null>(null)
 
-  // Carregar serviços
-  const loadServices = async () => {
+  // Carregar serviços com filtro de data
+  const loadServices = async (range?: DateRange) => {
     try {
       setLoading(true)
       // Timeout de segurança (30 segundos)
@@ -42,8 +50,11 @@ export default function DashboardPage() {
         setTimeout(() => reject(new Error("Timeout ao carregar serviços")), 30000)
       )
       
+      const startDate = range?.startDate
+      const endDate = range?.endDate
+      
       const data = await Promise.race([
-        servicesApi.getAll(),
+        servicesApi.getAll(startDate, endDate),
         timeoutPromise
       ]) as ServiceWithRelations[]
       
@@ -61,20 +72,16 @@ export default function DashboardPage() {
     }
   }
 
-  // Carregar dados iniciais
+  // Handler para mudança de período
+  const handleDateRangeChange = (range: DateRange) => {
+    setDateRange(range)
+    loadServices(range)
+  }
+
+  // Carregar dados iniciais (o DateRangeFilter já carrega do localStorage e chama handleDateRangeChange)
   useEffect(() => {
-    let mounted = true
-    
-    const loadData = async () => {
-      if (!mounted) return
-      await loadServices()
-    }
-    
-    loadData()
-    
-    return () => {
-      mounted = false
-    }
+    // O componente DateRangeFilter vai carregar o período do localStorage
+    // e chamar handleDateRangeChange automaticamente
   }, [])
 
   // Calcular KPIs
@@ -116,16 +123,36 @@ export default function DashboardPage() {
     }
   }, [services])
 
-  // Preparar dados do gráfico (últimos 6 meses)
+  // Preparar dados do gráfico baseado no período selecionado
   const chartData = useMemo(() => {
+    if (services.length === 0) {
+      return []
+    }
+
     const months: { [key: string]: number } = {}
-    const now = new Date()
     
-    // Inicializar últimos 6 meses com 0
-    for (let i = 5; i >= 0; i--) {
-      const date = new Date(now.getFullYear(), now.getMonth() - i, 1)
-      const monthKey = date.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })
-      months[monthKey] = 0
+    // Se houver período selecionado, usar apenas os meses desse período
+    if (dateRange) {
+      const startDate = new Date(dateRange.startDate)
+      const endDate = new Date(dateRange.endDate)
+      
+      // Criar array de meses entre startDate e endDate
+      const currentDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1)
+      const lastDate = new Date(endDate.getFullYear(), endDate.getMonth(), 1)
+      
+      while (currentDate <= lastDate) {
+        const monthKey = currentDate.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })
+        months[monthKey] = 0
+        currentDate.setMonth(currentDate.getMonth() + 1)
+      }
+    } else {
+      // Se não houver período, usar últimos 6 meses (fallback)
+      const now = new Date()
+      for (let i = 5; i >= 0; i--) {
+        const date = new Date(now.getFullYear(), now.getMonth() - i, 1)
+        const monthKey = date.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })
+        months[monthKey] = 0
+      }
     }
 
     // Agrupar serviços por mês
@@ -142,7 +169,7 @@ export default function DashboardPage() {
       name,
       value: Number(value.toFixed(2)),
     }))
-  }, [services])
+  }, [services, dateRange])
 
   // Serviços recentes (últimos 5)
   const recentServices = useMemo(() => {
@@ -189,7 +216,8 @@ export default function DashboardPage() {
         title: "Serviço excluído!",
         description: "O serviço foi excluído com sucesso.",
       })
-      await loadServices()
+      // Recarregar serviços com o período atual
+      await loadServices(dateRange || undefined)
       // Fechar sheet se o serviço excluído estava selecionado
       if (selectedService?.id === deletingService.id) {
         setShowServiceSheet(false)
@@ -206,7 +234,8 @@ export default function DashboardPage() {
   }
 
   const handleServiceWizardSuccess = () => {
-    loadServices()
+    // Recarregar serviços com o período atual
+    loadServices(dateRange || undefined)
     setShowServiceWizard(false)
     setEditingService(null)
     // Se estava editando o serviço selecionado, atualizar o sheet
@@ -239,21 +268,31 @@ export default function DashboardPage() {
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
+        <div className="flex-1">
           <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
             Dashboard
           </h2>
           <p className="text-sm text-slate-600 dark:text-slate-400 mt-1 capitalize">
             {currentDate}
           </p>
+          {/* Filtro de período - Mobile: abaixo do título, Desktop: ao lado */}
+          <div className="mt-3 md:hidden w-full">
+            <DateRangeFilter onDateRangeChange={handleDateRangeChange} />
+          </div>
         </div>
-        <Button
-          onClick={handleCreateService}
-          className="hidden md:flex gap-2 bg-blue-600 hover:bg-blue-700 text-white"
-        >
-          <Plus className="h-4 w-4" />
-          <span>Novo Serviço</span>
-        </Button>
+        <div className="flex items-center gap-3">
+          {/* Filtro de período - Desktop: ao lado do botão */}
+          <div className="hidden md:block">
+            <DateRangeFilter onDateRangeChange={handleDateRangeChange} />
+          </div>
+          <Button
+            onClick={handleCreateService}
+            className="hidden md:flex gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            <Plus className="h-4 w-4" />
+            <span>Novo Serviço</span>
+          </Button>
+        </div>
       </div>
 
       {/* Loading State */}
