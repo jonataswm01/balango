@@ -314,8 +314,11 @@ export function ServiceWizard({
     try {
       if (serviceToEdit) {
         // Atualizar serviço existente
+        // Garantir que a data está no formato YYYY-MM-DD (sem conversão de timezone)
+        const serviceDate = values.date.split('T')[0] // Pega apenas a parte da data se vier com hora
+        
         const updatePayload: ServiceUpdate = {
-          date: values.date,
+          date: serviceDate,
           description: values.description || null,
           location: values.location,
           client_id: values.client_id,
@@ -327,14 +330,15 @@ export function ServiceWizard({
           has_invoice: values.has_invoice,
           invoice_number: values.has_invoice && values.invoice_number ? values.invoice_number : null,
           payment_status: values.payment_status,
-          payment_date: values.payment_status === "pago" ? values.payment_date || null : null,
+          payment_date: values.payment_status === "pago" && values.payment_date ? values.payment_date.split('T')[0] : null,
         }
 
         // Se start_time foi preenchido, criar start_date
         if (values.start_time) {
           const [hours, minutes] = values.start_time.split(":")
-          const startDate = new Date(values.date)
-          startDate.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0)
+          // Criar data no timezone local para evitar problemas de conversão
+          const [year, month, day] = values.date.split("-")
+          const startDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day), parseInt(hours, 10), parseInt(minutes, 10), 0, 0)
           updatePayload.start_date = startDate.toISOString()
         }
 
@@ -345,8 +349,11 @@ export function ServiceWizard({
         })
       } else {
         // Criar novo serviço
+        // Garantir que a data está no formato YYYY-MM-DD (sem conversão de timezone)
+        const serviceDate = values.date.split('T')[0] // Pega apenas a parte da data se vier com hora
+        
         const createPayload: ServiceInsert = {
-          date: values.date,
+          date: serviceDate,
           description: values.description || undefined,
           location: values.location,
           client_id: values.client_id,
@@ -358,7 +365,7 @@ export function ServiceWizard({
           has_invoice: values.has_invoice,
           invoice_number: values.has_invoice && values.invoice_number ? values.invoice_number : null,
           payment_status: values.payment_status,
-          payment_date: values.payment_status === "pago" ? values.payment_date : null,
+          payment_date: values.payment_status === "pago" && values.payment_date ? values.payment_date.split('T')[0] : null,
           status: "pendente",
           priority: "media",
         }
@@ -366,8 +373,9 @@ export function ServiceWizard({
         // Se start_time foi preenchido, criar start_date
         if (values.start_time) {
           const [hours, minutes] = values.start_time.split(":")
-          const startDate = new Date(values.date)
-          startDate.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0)
+          // Criar data no timezone local para evitar problemas de conversão
+          const [year, month, day] = values.date.split("-")
+          const startDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day), parseInt(hours, 10), parseInt(minutes, 10), 0, 0)
           createPayload.start_date = startDate.toISOString()
         }
 
