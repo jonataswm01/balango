@@ -34,6 +34,8 @@ export default function DashboardPage() {
   }, [])
   
   const [services, setServices] = useState<ServiceWithRelations[]>([])
+  const [allPendingServices, setAllPendingServices] = useState<ServiceWithRelations[]>([])
+  const [recentServices, setRecentServices] = useState<ServiceWithRelations[]>([])
   const [dateRange, setDateRange] = useState<DateRange | null>(null)
   const [showServiceWizard, setShowServiceWizard] = useState(false)
   const [selectedService, setSelectedService] = useState<ServiceWithRelations | null>(null)
@@ -72,16 +74,51 @@ export default function DashboardPage() {
     }
   }
 
+  // Carregar todos os serviços pendentes (para cálculo de KPI)
+  const loadPendingServices = async () => {
+    try {
+      // Carregar todos os serviços pendentes (sem filtro de data)
+      const data = await servicesApi.getAll() as ServiceWithRelations[]
+      const pending = data.filter(s => s.payment_status === 'pendente')
+      setAllPendingServices(pending)
+    } catch (error: any) {
+      console.error("Erro ao carregar serviços pendentes:", error)
+      setAllPendingServices([])
+    }
+  }
+
+  // Carregar os 6 últimos serviços adicionados (para Atividade Recente)
+  const loadRecentServices = async () => {
+    try {
+      // Carregar todos os serviços (sem filtro de data) para pegar os últimos adicionados
+      const data = await servicesApi.getAll() as ServiceWithRelations[]
+      // Ordenar por created_at (mais recente primeiro) e pegar os 6 primeiros
+      const recent = [...data]
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(0, 6)
+      setRecentServices(recent)
+    } catch (error: any) {
+      console.error("Erro ao carregar serviços recentes:", error)
+      setRecentServices([])
+    }
+  }
+
   // Handler para mudança de período
   const handleDateRangeChange = (range: DateRange) => {
     setDateRange(range)
     loadServices(range)
+    // Recarregar pendentes e recentes também
+    loadPendingServices()
+    loadRecentServices()
   }
 
   // Carregar dados iniciais (o DateRangeFilter já carrega do localStorage e chama handleDateRangeChange)
   useEffect(() => {
     // O componente DateRangeFilter vai carregar o período do localStorage
     // e chamar handleDateRangeChange automaticamente
+    // Mas também precisamos carregar os pendentes e recentes na primeira vez
+    loadPendingServices()
+    loadRecentServices()
   }, [])
 
   // Calcular KPIs
@@ -91,6 +128,7 @@ export default function DashboardPage() {
     let expensesValue = 0
     let taxesValue = 0
 
+    // Balance, Expenses e Taxes: calculados com base nos serviços do período
     services.forEach((service) => {
       const grossValue = Number(service.gross_value) || 0
       const operationalCost = Number(service.operational_cost) || 0
@@ -103,16 +141,17 @@ export default function DashboardPage() {
         balanceValue += grossValue - operationalCost - taxAmount
       }
 
-      // Pending: Sum of gross_value where payment_status === 'pendente'
-      if (paymentStatus === 'pendente') {
-        pendingValue += grossValue
-      }
-
-      // Expenses: Sum of all operational_cost
+      // Expenses: Sum of all operational_cost (do período)
       expensesValue += operationalCost
 
-      // Taxes: Sum of all tax_amount
+      // Taxes: Sum of all tax_amount (do período)
       taxesValue += taxAmount
+    })
+
+    // Pending: Sum of ALL pending services (não apenas do período)
+    allPendingServices.forEach((service) => {
+      const grossValue = Number(service.gross_value) || 0
+      pendingValue += grossValue
     })
 
     return {
@@ -121,7 +160,7 @@ export default function DashboardPage() {
       expenses: expensesValue,
       taxes: taxesValue,
     }
-  }, [services])
+  }, [services, allPendingServices])
 
   // Preparar dados do gráfico baseado no período selecionado
   const chartData = useMemo(() => {
@@ -171,12 +210,6 @@ export default function DashboardPage() {
     }))
   }, [services, dateRange])
 
-  // Serviços recentes (últimos 5)
-  const recentServices = useMemo(() => {
-    return [...services]
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-      .slice(0, 5)
-  }, [services])
 
   // Handlers
   const handleCreateService = () => {
@@ -218,6 +251,9 @@ export default function DashboardPage() {
       })
       // Recarregar serviços com o período atual
       await loadServices(dateRange || undefined)
+      // Recarregar pendentes e recentes também
+      await loadPendingServices()
+      await loadRecentServices()
       // Fechar sheet se o serviço excluído estava selecionado
       if (selectedService?.id === deletingService.id) {
         setShowServiceSheet(false)
@@ -236,6 +272,9 @@ export default function DashboardPage() {
   const handleServiceWizardSuccess = () => {
     // Recarregar serviços com o período atual
     loadServices(dateRange || undefined)
+    // Recarregar pendentes e recentes também
+    loadPendingServices()
+    loadRecentServices()
     setShowServiceWizard(false)
     setEditingService(null)
     // Se estava editando o serviço selecionado, atualizar o sheet

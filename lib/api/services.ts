@@ -53,7 +53,7 @@ export function calculateTaxAmount(
 }
 
 /**
- * Atualiza o status do serviço automaticamente baseado em datas
+ * Atualiza o status do serviço automaticamente baseado em datas e pagamento
  */
 export function updateServiceStatus(
   currentService: Service,
@@ -64,24 +64,41 @@ export function updateServiceStatus(
     return undefined
   }
 
+  // Só reagir quando os campos realmente mudarem
+  const startDateChanged =
+    updateData.start_date !== undefined &&
+    updateData.start_date !== currentService.start_date
+  const completedDateChanged =
+    updateData.completed_date !== undefined &&
+    updateData.completed_date !== currentService.completed_date
+
   let newStatus: ServiceStatus | undefined = undefined
 
-  // Se completed_date foi preenchido, status = concluido
-  if (updateData.completed_date !== undefined && updateData.completed_date !== null) {
+  // Prioridade 1: Se completed_date foi preenchido, status = concluido
+  // Isso indica que o trabalho foi realmente finalizado
+  if (completedDateChanged && updateData.completed_date !== null) {
     newStatus = 'concluido'
   }
-  // Se start_date foi preenchido e status atual é pendente, muda para em_andamento
+  // Prioridade 2: Se completed_date foi removido e status atual é concluido, volta para em_andamento ou pendente
+  else if (completedDateChanged && updateData.completed_date === null && currentService.status === 'concluido') {
+    // Se tinha start_date, volta para em_andamento, senão volta para pendente
+    newStatus = currentService.start_date ? 'em_andamento' : 'pendente'
+  }
+  // Prioridade 3: Se start_date foi preenchido e status atual é pendente, muda para em_andamento
+  // Isso indica que o trabalho começou
   else if (
-    updateData.start_date !== undefined &&
+    startDateChanged &&
     updateData.start_date !== null &&
     currentService.status === 'pendente'
   ) {
     newStatus = 'em_andamento'
   }
-  // Se start_date foi removido e status atual é em_andamento, volta para pendente
+  // Prioridade 4: Se start_date foi removido e status atual é em_andamento, volta para pendente
   else if (
+    startDateChanged &&
     updateData.start_date === null &&
-    currentService.status === 'em_andamento'
+    currentService.status === 'em_andamento' &&
+    !currentService.completed_date // Só volta para pendente se não tiver completed_date
   ) {
     newStatus = 'pendente'
   }
