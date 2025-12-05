@@ -124,6 +124,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
     }
 
+    // Buscar organization_id do usuário
+    const organizationId = await getUserOrganizationId(supabase)
+    if (!organizationId) {
+      return NextResponse.json(
+        { error: 'Usuário não está associado a uma organização' },
+        { status: 403 }
+      )
+    }
+
     // Ler body
     const body: ServiceInsert = await request.json()
 
@@ -159,15 +168,6 @@ export async function POST(request: NextRequest) {
       if (technicianError || !technician) {
         return NextResponse.json({ error: 'Técnico não encontrado' }, { status: 404 })
       }
-    }
-
-    // Buscar organization_id do usuário
-    const organizationId = await getUserOrganizationId(supabase)
-    if (!organizationId) {
-      return NextResponse.json(
-        { error: 'Usuário não está associado a uma organização' },
-        { status: 403 }
-      )
     }
 
     // Preparar dados (valores padrão e cálculos)
