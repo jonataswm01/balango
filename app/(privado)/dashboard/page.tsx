@@ -316,13 +316,13 @@ export default function DashboardPage() {
             {currentDate}
           </p>
           {/* Filtro de período - Mobile: abaixo do título, Desktop: ao lado */}
-          <div className="mt-3 md:hidden w-full">
+          <div className="mt-3 md:hidden w-full hidden">
             <DateRangeFilter onDateRangeChange={handleDateRangeChange} />
           </div>
         </div>
         <div className="flex items-center gap-3">
           {/* Filtro de período - Desktop: ao lado do botão */}
-          <div className="hidden md:block">
+          <div className="hidden">
             <DateRangeFilter onDateRangeChange={handleDateRangeChange} />
           </div>
           <Button
