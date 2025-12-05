@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { ServiceUpdate, ServiceWithRelations } from '@/lib/types/database'
 import { prepareServiceUpdate } from '@/lib/api/services'
+import { getUserOrganizationId } from '@/lib/api/auth'
 
 /**
  * GET /api/services/[id]
@@ -24,9 +25,18 @@ export async function GET(
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
     }
 
+    // Buscar organization_id do usuário
+    const organizationId = await getUserOrganizationId(supabase)
+    if (!organizationId) {
+      return NextResponse.json(
+        { error: 'Usuário não está associado a uma organização' },
+        { status: 403 }
+      )
+    }
+
     const { id } = params
 
-    // Buscar serviço com relacionamentos
+    // Buscar serviço com relacionamentos (FILTRADO POR ORGANIZAÇÃO)
     const { data: service, error } = await supabase
       .from('services')
       .select(`
@@ -49,6 +59,7 @@ export async function GET(
         )
       `)
       .eq('id', id)
+      .eq('organization_id', organizationId)
       .single()
 
     if (error) {
@@ -100,26 +111,37 @@ export async function PATCH(
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
     }
 
+    // Buscar organization_id do usuário
+    const organizationId = await getUserOrganizationId(supabase)
+    if (!organizationId) {
+      return NextResponse.json(
+        { error: 'Usuário não está associado a uma organização' },
+        { status: 403 }
+      )
+    }
+
     const { id } = params
     const body: ServiceUpdate = await request.json()
 
-    // Buscar serviço atual
+    // Buscar serviço atual (FILTRADO POR ORGANIZAÇÃO)
     const { data: currentService, error: fetchError } = await supabase
       .from('services')
       .select('*')
       .eq('id', id)
+      .eq('organization_id', organizationId)
       .single()
 
     if (fetchError || !currentService) {
       return NextResponse.json({ error: 'Serviço não encontrado' }, { status: 404 })
     }
 
-    // Verificar se cliente existe (se foi alterado)
+    // Verificar se cliente existe e pertence à organização (se foi alterado)
     if (body.client_id && body.client_id !== currentService.client_id) {
       const { data: client, error: clientError } = await supabase
         .from('clients')
         .select('id')
         .eq('id', body.client_id)
+        .eq('organization_id', organizationId)
         .single()
 
       if (clientError || !client) {
@@ -127,12 +149,13 @@ export async function PATCH(
       }
     }
 
-    // Verificar se técnico existe (se foi alterado)
+    // Verificar se técnico existe e pertence à organização (se foi alterado)
     if (body.technician_id && body.technician_id !== currentService.technician_id) {
       const { data: technician, error: technicianError } = await supabase
         .from('technicians')
         .select('id')
         .eq('id', body.technician_id)
+        .eq('organization_id', organizationId)
         .single()
 
       if (technicianError || !technician) {
@@ -215,13 +238,23 @@ export async function DELETE(
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
     }
 
+    // Buscar organization_id do usuário
+    const organizationId = await getUserOrganizationId(supabase)
+    if (!organizationId) {
+      return NextResponse.json(
+        { error: 'Usuário não está associado a uma organização' },
+        { status: 403 }
+      )
+    }
+
     const { id } = params
 
-    // Verificar se serviço existe
+    // Verificar se serviço existe e pertence à organização
     const { data: service, error: fetchError } = await supabase
       .from('services')
       .select('id')
       .eq('id', id)
+      .eq('organization_id', organizationId)
       .single()
 
     if (fetchError || !service) {
@@ -229,7 +262,11 @@ export async function DELETE(
     }
 
     // Deletar serviço
-    const { error: deleteError } = await supabase.from('services').delete().eq('id', id)
+    const { error: deleteError } = await supabase
+      .from('services')
+      .delete()
+      .eq('id', id)
+      .eq('organization_id', organizationId)
 
     if (deleteError) {
       console.error('Erro ao deletar serviço:', deleteError)

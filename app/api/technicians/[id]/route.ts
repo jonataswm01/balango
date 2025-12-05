@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { TechnicianUpdate } from '@/lib/types/database'
+import { getUserOrganizationId } from '@/lib/api/auth'
 
 /**
  * GET /api/technicians/[id]
@@ -23,12 +24,22 @@ export async function GET(
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
     }
 
+    // Buscar organization_id do usuário
+    const organizationId = await getUserOrganizationId(supabase)
+    if (!organizationId) {
+      return NextResponse.json(
+        { error: 'Usuário não está associado a uma organização' },
+        { status: 403 }
+      )
+    }
+
     const { id } = params
 
     const { data: technician, error } = await supabase
       .from('technicians')
       .select('*')
       .eq('id', id)
+      .eq('organization_id', organizationId)
       .single()
 
     if (error) {
@@ -73,12 +84,33 @@ export async function PATCH(
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
     }
 
+    // Buscar organization_id do usuário
+    const organizationId = await getUserOrganizationId(supabase)
+    if (!organizationId) {
+      return NextResponse.json(
+        { error: 'Usuário não está associado a uma organização' },
+        { status: 403 }
+      )
+    }
+
     const { id } = params
     const body: TechnicianUpdate = await request.json()
 
     // Validar nome se foi alterado
     if (body.name !== undefined && body.name.trim() === '') {
       return NextResponse.json({ error: 'Nome não pode ser vazio' }, { status: 400 })
+    }
+
+    // Verificar se técnico pertence à organização
+    const { data: currentTechnician, error: fetchError } = await supabase
+      .from('technicians')
+      .select('id')
+      .eq('id', id)
+      .eq('organization_id', organizationId)
+      .single()
+
+    if (fetchError || !currentTechnician) {
+      return NextResponse.json({ error: 'Técnico não encontrado' }, { status: 404 })
     }
 
     // Limpar campos undefined/null e construir objeto de atualização
@@ -96,6 +128,7 @@ export async function PATCH(
       .from('technicians')
       .update(updateData)
       .eq('id', id)
+      .eq('organization_id', organizationId)
       .select()
       .single()
 
@@ -141,13 +174,23 @@ export async function DELETE(
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
     }
 
+    // Buscar organization_id do usuário
+    const organizationId = await getUserOrganizationId(supabase)
+    if (!organizationId) {
+      return NextResponse.json(
+        { error: 'Usuário não está associado a uma organização' },
+        { status: 403 }
+      )
+    }
+
     const { id } = params
 
-    // Verificar se técnico existe
+    // Verificar se técnico existe e pertence à organização
     const { data: technician, error: fetchError } = await supabase
       .from('technicians')
       .select('id')
       .eq('id', id)
+      .eq('organization_id', organizationId)
       .single()
 
     if (fetchError || !technician) {
@@ -159,6 +202,7 @@ export async function DELETE(
       .from('services')
       .select('id')
       .eq('technician_id', id)
+      .eq('organization_id', organizationId)
       .limit(1)
 
     if (servicesError) {
@@ -175,6 +219,7 @@ export async function DELETE(
       .from('technicians')
       .delete()
       .eq('id', id)
+      .eq('organization_id', organizationId)
 
     if (deleteError) {
       console.error('Erro ao deletar técnico:', deleteError)

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { getUserOrganizationId } from '@/lib/api/auth'
 
 /**
  * GET /api/services/calendar/[year]/[month]
@@ -22,6 +23,15 @@ export async function GET(
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
     }
 
+    // Buscar organization_id do usuário
+    const organizationId = await getUserOrganizationId(supabase)
+    if (!organizationId) {
+      return NextResponse.json(
+        { error: 'Usuário não está associado a uma organização' },
+        { status: 403 }
+      )
+    }
+
     const year = parseInt(params.year)
     const month = parseInt(params.month)
 
@@ -37,7 +47,7 @@ export async function GET(
     const firstDay = new Date(year, month - 1, 1)
     const lastDay = new Date(year, month, 0)
 
-    // Buscar serviços do mês
+    // Buscar serviços do mês (FILTRADO POR ORGANIZAÇÃO)
     const { data: services, error } = await supabase
       .from('services')
       .select(`
@@ -55,6 +65,7 @@ export async function GET(
           nickname
         )
       `)
+      .eq('organization_id', organizationId)
       .gte('date', firstDay.toISOString().split('T')[0])
       .lte('date', lastDay.toISOString().split('T')[0])
       .order('date', { ascending: true })

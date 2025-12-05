@@ -21,11 +21,24 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
     }
 
+    // Buscar organization_id do usuário
+    const organizationId = await getUserOrganizationId(supabase)
+    if (!organizationId) {
+      return NextResponse.json(
+        { error: 'Usuário não está associado a uma organização' },
+        { status: 403 }
+      )
+    }
+
     // Buscar parâmetro para incluir inativos
     const { searchParams } = new URL(request.url)
     const includeInactive = searchParams.get('includeInactive') === 'true'
 
-    let query = supabase.from('clients').select('*').order('name', { ascending: true })
+    let query = supabase
+      .from('clients')
+      .select('*')
+      .eq('organization_id', organizationId)
+      .order('name', { ascending: true })
 
     if (!includeInactive) {
       query = query.eq('active', true)

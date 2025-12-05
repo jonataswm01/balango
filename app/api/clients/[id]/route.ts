@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { ClientUpdate } from '@/lib/types/database'
+import { getUserOrganizationId } from '@/lib/api/auth'
 
 /**
  * GET /api/clients/[id]
@@ -23,12 +24,22 @@ export async function GET(
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
     }
 
+    // Buscar organization_id do usuário
+    const organizationId = await getUserOrganizationId(supabase)
+    if (!organizationId) {
+      return NextResponse.json(
+        { error: 'Usuário não está associado a uma organização' },
+        { status: 403 }
+      )
+    }
+
     const { id } = params
 
     const { data: client, error } = await supabase
       .from('clients')
       .select('*')
       .eq('id', id)
+      .eq('organization_id', organizationId)
       .single()
 
     if (error) {
@@ -73,12 +84,33 @@ export async function PATCH(
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
     }
 
+    // Buscar organization_id do usuário
+    const organizationId = await getUserOrganizationId(supabase)
+    if (!organizationId) {
+      return NextResponse.json(
+        { error: 'Usuário não está associado a uma organização' },
+        { status: 403 }
+      )
+    }
+
     const { id } = params
     const body: ClientUpdate = await request.json()
 
     // Validar nome se foi alterado
     if (body.name !== undefined && body.name.trim() === '') {
       return NextResponse.json({ error: 'Nome não pode ser vazio' }, { status: 400 })
+    }
+
+    // Verificar se cliente pertence à organização
+    const { data: currentClient, error: fetchError } = await supabase
+      .from('clients')
+      .select('id')
+      .eq('id', id)
+      .eq('organization_id', organizationId)
+      .single()
+
+    if (fetchError || !currentClient) {
+      return NextResponse.json({ error: 'Cliente não encontrado' }, { status: 404 })
     }
 
     // Limpar campos undefined/null e construir objeto de atualização
@@ -96,6 +128,7 @@ export async function PATCH(
       .from('clients')
       .update(updateData)
       .eq('id', id)
+      .eq('organization_id', organizationId)
       .select()
       .single()
 
@@ -141,13 +174,23 @@ export async function DELETE(
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
     }
 
+    // Buscar organization_id do usuário
+    const organizationId = await getUserOrganizationId(supabase)
+    if (!organizationId) {
+      return NextResponse.json(
+        { error: 'Usuário não está associado a uma organização' },
+        { status: 403 }
+      )
+    }
+
     const { id } = params
 
-    // Verificar se cliente existe
+    // Verificar se cliente existe e pertence à organização
     const { data: client, error: fetchError } = await supabase
       .from('clients')
       .select('id')
       .eq('id', id)
+      .eq('organization_id', organizationId)
       .single()
 
     if (fetchError || !client) {
@@ -159,6 +202,7 @@ export async function DELETE(
       .from('services')
       .select('id')
       .eq('client_id', id)
+      .eq('organization_id', organizationId)
       .limit(1)
 
     if (servicesError) {
@@ -171,7 +215,11 @@ export async function DELETE(
     }
 
     // Deletar cliente
-    const { error: deleteError } = await supabase.from('clients').delete().eq('id', id)
+    const { error: deleteError } = await supabase
+      .from('clients')
+      .delete()
+      .eq('id', id)
+      .eq('organization_id', organizationId)
 
     if (deleteError) {
       console.error('Erro ao deletar cliente:', deleteError)

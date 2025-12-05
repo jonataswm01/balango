@@ -30,7 +30,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
     }
 
-    // Buscar serviços com relacionamentos
+    // Buscar organization_id do usuário
+    const organizationId = await getUserOrganizationId(supabase)
+    if (!organizationId) {
+      return NextResponse.json(
+        { error: 'Usuário não está associado a uma organização' },
+        { status: 403 }
+      )
+    }
+
+    // Buscar serviços com relacionamentos (FILTRADO POR ORGANIZAÇÃO)
     const { data: services, error } = await supabase
       .from('services')
       .select(`
@@ -49,6 +58,7 @@ export async function GET(request: NextRequest) {
           phone
         )
       `)
+      .eq('organization_id', organizationId)
       .order('date', { ascending: false })
       .order('created_at', { ascending: false })
 
@@ -104,12 +114,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: validation.error }, { status: 400 })
     }
 
-    // Verificar se cliente existe
+    // Verificar se cliente existe e pertence à organização
     if (body.client_id) {
       const { data: client, error: clientError } = await supabase
         .from('clients')
         .select('id')
         .eq('id', body.client_id)
+        .eq('organization_id', organizationId)
         .single()
 
       if (clientError || !client) {
@@ -117,12 +128,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Verificar se técnico existe
+    // Verificar se técnico existe e pertence à organização
     if (body.technician_id) {
       const { data: technician, error: technicianError } = await supabase
         .from('technicians')
         .select('id')
         .eq('id', body.technician_id)
+        .eq('organization_id', organizationId)
         .single()
 
       if (technicianError || !technician) {
