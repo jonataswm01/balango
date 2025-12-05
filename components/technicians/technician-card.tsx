@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Technician } from "@/lib/types/database"
-import { Edit, Trash2, UserX, UserCheck, MoreVertical } from "lucide-react"
+import { Edit, Trash2, UserX, UserCheck, MoreVertical, Phone, Mail, FileText, User } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface TechnicianCardProps {
@@ -28,158 +28,114 @@ export function TechnicianCard({
   onToggleActive,
 }: TechnicianCardProps) {
   return (
-    <Card className="h-full border-slate-200 hover:shadow-md transition-shadow flex flex-col">
-      <CardContent className="p-4 flex-1 flex flex-col">
-        <div className="flex items-center gap-4 flex-1">
-          {/* Grupo de Informações */}
-          <div className="flex-1 space-y-1">
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+    <Card className="h-full border-slate-200 dark:border-slate-800 hover:shadow-lg hover:border-slate-300 dark:hover:border-slate-700 transition-all duration-200 flex flex-col rounded-xl">
+      <CardContent className="p-5 flex-1 flex flex-col">
+        {/* Header com nome e menu */}
+        <div className="flex items-start justify-between gap-3 mb-4">
+          <div className="flex-1 min-w-0">
+            <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 truncate">
               {technician.name}
             </h3>
             {technician.nickname && (
-              <p className="hidden lg:block text-sm text-slate-500 dark:text-slate-400">
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5 truncate">
                 {technician.nickname}
               </p>
             )}
-            {technician.phone && (
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-slate-500 dark:text-slate-400">
-                  Telefone:
-                </span>
-                <span className="text-sm text-slate-700 dark:text-slate-300">
-                  {technician.phone}
-                </span>
-              </div>
-            )}
-            {/* Email e Documento - apenas desktop */}
-            {technician.email && (
-              <div className="hidden lg:flex items-center gap-2">
-                <span className="text-sm text-slate-500 dark:text-slate-400">
-                  Email:
-                </span>
-                <span className="text-sm text-slate-700 dark:text-slate-300">
-                  {technician.email}
-                </span>
-              </div>
-            )}
-            {technician.document && (
-              <div className="hidden lg:flex items-center gap-2">
-                <span className="text-sm text-slate-500 dark:text-slate-400">
-                  CPF:
-                </span>
-                <span className="text-sm text-slate-700 dark:text-slate-300">
-                  {technician.document}
-                </span>
-              </div>
-            )}
           </div>
-
-          {/* Status */}
-          <div className="flex items-center">
-            <Badge
-              variant={technician.active ? "default" : "secondary"}
-              className={cn(
-                technician.active
-                  ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
-                  : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+          
+          {/* Menu de ações */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-8 w-8 p-0 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
+              >
+                <MoreVertical className="h-4 w-4 text-slate-500 dark:text-slate-400" />
+                <span className="sr-only">Abrir menu</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              {onEdit && (
+                <DropdownMenuItem onClick={onEdit} className="cursor-pointer">
+                  <Edit className="mr-2 h-4 w-4" />
+                  Editar
+                </DropdownMenuItem>
               )}
-            >
-              {technician.active ? "Ativo" : "Inativo"}
-            </Badge>
-          </div>
-
-          {/* Botões de Ação - Desktop */}
-          <div className="hidden lg:flex flex-col gap-2">
-            {onToggleActive && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onToggleActive}
-                className="gap-2"
-              >
-                {technician.active ? (
-                  <>
-                    <UserX className="h-4 w-4" />
-                    Desativar
-                  </>
-                ) : (
-                  <>
-                    <UserCheck className="h-4 w-4" />
-                    Ativar
-                  </>
-                )}
-              </Button>
-            )}
-            {onEdit && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onEdit}
-                className="gap-2"
-              >
-                <Edit className="h-4 w-4" />
-                Editar
-              </Button>
-            )}
-            {onDelete && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onDelete}
-                className="gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-              >
-                <Trash2 className="h-4 w-4" />
-                Excluir
-              </Button>
-            )}
-          </div>
-
-          {/* Menu Hamburger - Mobile/Tablet */}
-          <div className="lg:hidden flex items-center">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 flex items-center justify-center">
-                  <MoreVertical className="h-5 w-5" />
-                  <span className="sr-only">Abrir menu</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {onEdit && (
-                  <DropdownMenuItem onClick={onEdit}>
-                    <Edit className="mr-2 h-4 w-4" />
-                    Editar
+              {onToggleActive && (
+                <DropdownMenuItem onClick={onToggleActive} className="cursor-pointer">
+                  {technician.active ? (
+                    <>
+                      <UserX className="mr-2 h-4 w-4" />
+                      Desativar
+                    </>
+                  ) : (
+                    <>
+                      <UserCheck className="mr-2 h-4 w-4" />
+                      Ativar
+                    </>
+                  )}
+                </DropdownMenuItem>
+              )}
+              {onDelete && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={onDelete}
+                    className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/20 cursor-pointer"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Excluir
                   </DropdownMenuItem>
-                )}
-                {onToggleActive && (
-                  <DropdownMenuItem onClick={onToggleActive}>
-                    {technician.active ? (
-                      <>
-                        <UserX className="mr-2 h-4 w-4" />
-                        Desativar
-                      </>
-                    ) : (
-                      <>
-                        <UserCheck className="mr-2 h-4 w-4" />
-                        Ativar
-                      </>
-                    )}
-                  </DropdownMenuItem>
-                )}
-                {onDelete && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={onDelete}
-                      className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/20"
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Excluir
-                    </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        {/* Informações do técnico */}
+        <div className="flex-1 space-y-2.5">
+          {technician.phone && (
+            <div className="flex items-center gap-2.5">
+              <Phone className="h-4 w-4 text-slate-400 dark:text-slate-500 flex-shrink-0" />
+              <span className="text-sm text-slate-600 dark:text-slate-400 truncate">
+                {technician.phone}
+              </span>
+            </div>
+          )}
+          
+          {technician.email && (
+            <div className="flex items-center gap-2.5">
+              <Mail className="h-4 w-4 text-slate-400 dark:text-slate-500 flex-shrink-0" />
+              <span className="text-sm text-slate-600 dark:text-slate-400 truncate">
+                {technician.email}
+              </span>
+            </div>
+          )}
+          
+          {technician.document && (
+            <div className="flex items-center gap-2.5">
+              <FileText className="h-4 w-4 text-slate-400 dark:text-slate-500 flex-shrink-0" />
+              <span className="text-sm text-slate-600 dark:text-slate-400 truncate">
+                {technician.document}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Badge de Status no footer */}
+        <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+          <Badge
+            variant={technician.active ? "default" : "secondary"}
+            className={cn(
+              "text-xs font-medium",
+              technician.active
+                ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+            )}
+          >
+            {technician.active ? "Ativo" : "Inativo"}
+          </Badge>
         </div>
       </CardContent>
     </Card>

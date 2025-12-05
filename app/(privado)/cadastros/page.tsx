@@ -9,9 +9,9 @@ import { clientsApi, techniciansApi } from "@/lib/api/client"
 import { Client } from "@/lib/types/database"
 import { Technician } from "@/lib/types/database"
 import { ClientCard } from "@/components/clients/client-card"
-import { ClientModal } from "@/components/clients/client-modal"
+import { ClientSheet } from "@/components/clients/client-sheet"
 import { TechnicianCard } from "@/components/technicians/technician-card"
-import { TechnicianModal } from "@/components/technicians/technician-modal"
+import { TechnicianSheet } from "@/components/technicians/technician-sheet"
 import { EmptyState } from "@/components/shared/empty-state"
 import { ConfirmDialog } from "@/components/shared/confirm-dialog"
 import { LoadingSpinner } from "@/components/shared/loading-spinner"
@@ -28,7 +28,7 @@ export default function CadastrosPage() {
   // Estados para Clientes
   const [clients, setClients] = useState<Client[]>([])
   const [filteredClients, setFilteredClients] = useState<Client[]>([])
-  const [showClientModal, setShowClientModal] = useState(false)
+  const [showClientSheet, setShowClientSheet] = useState(false)
   const [editingClient, setEditingClient] = useState<Client | null>(null)
   const [deletingClient, setDeletingClient] = useState<Client | null>(null)
   const [togglingClient, setTogglingClient] = useState<Client | null>(null)
@@ -36,7 +36,7 @@ export default function CadastrosPage() {
   // Estados para Técnicos
   const [technicians, setTechnicians] = useState<Technician[]>([])
   const [filteredTechnicians, setFilteredTechnicians] = useState<Technician[]>([])
-  const [showTechnicianModal, setShowTechnicianModal] = useState(false)
+  const [showTechnicianSheet, setShowTechnicianSheet] = useState(false)
   const [editingTechnician, setEditingTechnician] = useState<Technician | null>(null)
   const [deletingTechnician, setDeletingTechnician] = useState<Technician | null>(null)
   const [togglingTechnician, setTogglingTechnician] = useState<Technician | null>(null)
@@ -122,12 +122,12 @@ export default function CadastrosPage() {
   // Handlers para Clientes
   const handleCreateClient = () => {
     setEditingClient(null)
-    setShowClientModal(true)
+    setShowClientSheet(true)
   }
 
   const handleEditClient = (client: Client) => {
     setEditingClient(client)
-    setShowClientModal(true)
+    setShowClientSheet(true)
   }
 
   const handleDeleteClient = (client: Client) => {
@@ -180,21 +180,21 @@ export default function CadastrosPage() {
     }
   }
 
-  const handleClientModalSuccess = () => {
+  const handleClientSheetSuccess = () => {
     loadClients()
-    setShowClientModal(false)
+    setShowClientSheet(false)
     setEditingClient(null)
   }
 
   // Handlers para Técnicos
   const handleCreateTechnician = () => {
     setEditingTechnician(null)
-    setShowTechnicianModal(true)
+    setShowTechnicianSheet(true)
   }
 
   const handleEditTechnician = (technician: Technician) => {
     setEditingTechnician(technician)
-    setShowTechnicianModal(true)
+    setShowTechnicianSheet(true)
   }
 
   const handleDeleteTechnician = (technician: Technician) => {
@@ -247,9 +247,9 @@ export default function CadastrosPage() {
     }
   }
 
-  const handleTechnicianModalSuccess = () => {
+  const handleTechnicianSheetSuccess = () => {
     loadTechnicians()
-    setShowTechnicianModal(false)
+    setShowTechnicianSheet(false)
     setEditingTechnician(null)
   }
 
@@ -467,11 +467,11 @@ export default function CadastrosPage() {
         <Plus className="h-6 w-6" />
       </Button>
 
-      {/* Modais de Cliente */}
-      <ClientModal
-        open={showClientModal}
-        onOpenChange={setShowClientModal}
-        onSuccess={handleClientModalSuccess}
+      {/* Sheets de Cliente */}
+      <ClientSheet
+        open={showClientSheet}
+        onOpenChange={setShowClientSheet}
+        onSuccess={handleClientSheetSuccess}
         client={editingClient}
       />
 
@@ -501,11 +501,11 @@ export default function CadastrosPage() {
         variant="default"
       />
 
-      {/* Modais de Técnico */}
-      <TechnicianModal
-        open={showTechnicianModal}
-        onOpenChange={setShowTechnicianModal}
-        onSuccess={handleTechnicianModalSuccess}
+      {/* Sheets de Técnico */}
+      <TechnicianSheet
+        open={showTechnicianSheet}
+        onOpenChange={setShowTechnicianSheet}
+        onSuccess={handleTechnicianSheetSuccess}
         technician={editingTechnician}
       />
 
