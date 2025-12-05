@@ -7,6 +7,7 @@ import {
   ClientInsert,
   TechnicianInsert,
 } from '@/lib/types/database'
+import { parseDateOnlyToLocal } from '@/lib/utils/dates'
 
 /**
  * Valida dados de criação de serviço
@@ -38,10 +39,9 @@ export function validateService(
     return { valid: false, error: 'Custo operacional não pode ser negativo' }
   }
 
-  // Validar formato de data
-  try {
-    new Date(data.date)
-  } catch {
+  // Validar formato de data (YYYY-MM-DD) e criar Date local
+  const date = parseDateOnlyToLocal(data.date)
+  if (isNaN(date.getTime())) {
     return { valid: false, error: 'Data inválida' }
   }
 

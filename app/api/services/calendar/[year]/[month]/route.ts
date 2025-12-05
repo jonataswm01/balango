@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getUserOrganizationId } from '@/lib/api/auth'
+import { parseDateOnlyToLocal } from '@/lib/utils/dates'
 
 /**
  * GET /api/services/calendar/[year]/[month]
@@ -82,7 +83,7 @@ export async function GET(
     const servicesByDay: Record<string, any[]> = {}
 
     services?.forEach((service: any) => {
-      const date = new Date(service.date)
+      const date = parseDateOnlyToLocal(service.date)
       const day = date.getDate().toString()
 
       if (!servicesByDay[day]) {

@@ -12,6 +12,7 @@ import { ServiceWizard } from "@/components/services/service-wizard"
 import { ConfirmDialog } from "@/components/shared/confirm-dialog"
 import { LoadingSpinner } from "@/components/shared/loading-spinner"
 import { EmptyState } from "@/components/shared/empty-state"
+import { parseDateOnlyToLocal } from "@/lib/utils/dates"
 
 export default function ServicesPage() {
   const { toast } = useToast()
@@ -29,7 +30,10 @@ export default function ServicesPage() {
       setLoading(true)
       const data = await servicesApi.getAll()
       // Ordenar por data (mais recentes primeiro)
-      data.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      data.sort(
+        (a, b) =>
+          parseDateOnlyToLocal(b.date).getTime() - parseDateOnlyToLocal(a.date).getTime()
+      )
       setServices(data)
     } catch (error: any) {
       toast({

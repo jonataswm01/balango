@@ -315,7 +315,8 @@ export function ServiceWizard({
       if (serviceToEdit) {
         // Atualizar serviço existente
         // Garantir que a data está no formato YYYY-MM-DD (sem conversão de timezone)
-        const serviceDate = values.date.split('T')[0] // Pega apenas a parte da data se vier com hora
+        // O input type="date" já retorna YYYY-MM-DD, mas vamos garantir
+        const serviceDate = values.date.includes('T') ? values.date.split('T')[0] : values.date
         
         const updatePayload: ServiceUpdate = {
           date: serviceDate,
@@ -350,7 +351,8 @@ export function ServiceWizard({
       } else {
         // Criar novo serviço
         // Garantir que a data está no formato YYYY-MM-DD (sem conversão de timezone)
-        const serviceDate = values.date.split('T')[0] // Pega apenas a parte da data se vier com hora
+        // O input type="date" já retorna YYYY-MM-DD, mas vamos garantir
+        const serviceDate = values.date.includes('T') ? values.date.split('T')[0] : values.date
         
         const createPayload: ServiceInsert = {
           date: serviceDate,

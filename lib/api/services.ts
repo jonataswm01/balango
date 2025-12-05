@@ -167,6 +167,44 @@ export function validateServiceInsert(data: ServiceInsert): { valid: boolean; er
 }
 
 /**
+ * Normaliza uma data para formato YYYY-MM-DD (sem timezone)
+ * Garante que a data seja enviada como string literal sem conversão
+ */
+function normalizeDate(dateString: string | undefined | null): string | undefined {
+  if (!dateString) return undefined
+  
+  // Se já está no formato YYYY-MM-DD, retorna direto
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+    return dateString
+  }
+  
+  // Se tem hora/timezone, remove
+  const dateOnly = dateString.split('T')[0]
+  
+  // Valida o formato
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateOnly)) {
+    return dateOnly
+  }
+  
+  // Se não está no formato esperado, tenta converter
+  try {
+    const date = new Date(dateString)
+    if (isNaN(date.getTime())) {
+      console.warn('Data inválida:', dateString)
+      return undefined
+    }
+    // Usa getFullYear, getMonth, getDate para evitar problemas de timezone
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  } catch {
+    console.warn('Erro ao normalizar data:', dateString)
+    return undefined
+  }
+}
+
+/**
  * Prepara dados de inserção com valores padrão e cálculos
  */
 export async function prepareServiceInsert(
@@ -174,6 +212,12 @@ export async function prepareServiceInsert(
   supabase: any
 ): Promise<ServiceInsert> {
   const prepared: ServiceInsert = { ...data }
+
+  // Normalizar datas para evitar problemas de timezone
+  prepared.date = normalizeDate(data.date) || data.date
+  if (prepared.payment_date) {
+    prepared.payment_date = normalizeDate(prepared.payment_date) || null
+  }
 
   // Valores padrão
   prepared.status = prepared.status || 'pendente'
@@ -202,6 +246,14 @@ export async function prepareServiceUpdate(
   supabase: any
 ): Promise<ServiceUpdate> {
   const prepared: ServiceUpdate = cleanUpdateData(data)
+
+  // Normalizar datas para evitar problemas de timezone
+  if (prepared.date) {
+    prepared.date = normalizeDate(prepared.date) || prepared.date
+  }
+  if (prepared.payment_date) {
+    prepared.payment_date = normalizeDate(prepared.payment_date) || null
+  }
 
   // Recalcular imposto se has_invoice ou gross_value mudaram
   const needsTaxRecalculation =

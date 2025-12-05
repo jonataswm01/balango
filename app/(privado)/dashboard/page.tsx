@@ -14,6 +14,7 @@ import { ConfirmDialog } from "@/components/shared/confirm-dialog"
 import { WalletStats } from "@/components/dashboard/wallet-stats"
 import { RevenueChart } from "@/components/dashboard/revenue-chart"
 import { DateRangeFilter } from "@/components/dashboard/date-range-filter"
+import { parseDateOnlyToLocal } from "@/lib/utils/dates"
 
 interface DateRange {
   startDate: string
@@ -196,7 +197,7 @@ export default function DashboardPage() {
 
     // Agrupar serviços por mês
     services.forEach((service) => {
-      const serviceDate = new Date(service.date)
+      const serviceDate = parseDateOnlyToLocal(service.date)
       const monthKey = serviceDate.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })
       
       if (months.hasOwnProperty(monthKey)) {

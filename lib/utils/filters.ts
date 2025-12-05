@@ -3,6 +3,7 @@
  */
 
 import { ServiceWithRelations } from '@/lib/types/database'
+import { parseDateOnlyToLocal } from '@/lib/utils/dates'
 
 export interface ServiceFilters {
   month?: string // YYYY-MM
@@ -24,8 +25,8 @@ export function filterServices(
   // Filtro por mês
   if (filters.month) {
     filtered = filtered.filter((service) => {
-      const serviceDate = new Date(service.date)
-      const filterDate = new Date(filters.month + '-01')
+      const serviceDate = parseDateOnlyToLocal(service.date)
+      const filterDate = parseDateOnlyToLocal(filters.month + '-01')
       return (
         serviceDate.getMonth() === filterDate.getMonth() &&
         serviceDate.getFullYear() === filterDate.getFullYear()

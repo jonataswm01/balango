@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
+import { parseDateOnlyToLocal } from "@/lib/utils/dates"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -13,7 +14,8 @@ export function formatCurrency(value: number): string {
 }
 
 export function formatDate(date: Date | string): string {
-  const d = typeof date === "string" ? new Date(date) : date
+  const d =
+    typeof date === "string" ? parseDateOnlyToLocal(date) : new Date(date.getTime())
   return new Intl.DateTimeFormat("pt-BR", {
     day: "2-digit",
     month: "2-digit",
@@ -22,7 +24,8 @@ export function formatDate(date: Date | string): string {
 }
 
 export function formatDateLong(date: Date | string): string {
-  const d = typeof date === "string" ? new Date(date) : date
+  const d =
+    typeof date === "string" ? parseDateOnlyToLocal(date) : new Date(date.getTime())
   return new Intl.DateTimeFormat("pt-BR", {
     day: "2-digit",
     month: "long",

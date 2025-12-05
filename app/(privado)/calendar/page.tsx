@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/ui/use-toast"
 import { servicesApi } from "@/lib/api/client"
 import { ServiceWithRelations } from "@/lib/types/database"
+import { parseDateOnlyToLocal } from "@/lib/utils/dates"
 import { ServiceCard } from "@/components/services/service-card"
 import { ServiceSheet } from "@/components/services/service-sheet"
 import { ServiceWizard } from "@/components/services/service-wizard"
@@ -273,7 +274,10 @@ export default function CalendarPage() {
         return allServices.find((s) => s.id === dayService.id)
       })
       .filter((s): s is ServiceWithRelations => s !== undefined)
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .sort(
+        (a, b) =>
+          parseDateOnlyToLocal(b.date).getTime() - parseDateOnlyToLocal(a.date).getTime()
+      )
   }, [selectedDate, servicesByDay, allServices])
 
   const handleCreateService = () => {

@@ -3,6 +3,7 @@
  */
 
 import { ServiceWithRelations } from '@/lib/types/database'
+import { parseDateOnlyToLocal } from '@/lib/utils/dates'
 import { calculateKPIs } from './services'
 
 export type ChartType = 
@@ -145,7 +146,7 @@ export function prepareBarChartData(services: ServiceWithRelations[]) {
   today.setHours(0, 0, 0, 0)
   
   services.forEach((service) => {
-    const serviceDate = new Date(service.date)
+    const serviceDate = parseDateOnlyToLocal(service.date)
     serviceDate.setHours(0, 0, 0, 0)
     
     if (!oldestDate || serviceDate < oldestDate) {
@@ -195,7 +196,7 @@ export function prepareAreaChartData(services: ServiceWithRelations[], taxRate: 
   today.setHours(0, 0, 0, 0)
   
   services.forEach((service) => {
-    const serviceDate = new Date(service.date)
+    const serviceDate = parseDateOnlyToLocal(service.date)
     serviceDate.setHours(0, 0, 0, 0)
     
     if (!oldestDate || serviceDate < oldestDate) {
@@ -282,7 +283,7 @@ export function prepareComposedChartData(services: ServiceWithRelations[], taxRa
   today.setHours(0, 0, 0, 0)
   
   services.forEach((service) => {
-    const serviceDate = new Date(service.date)
+    const serviceDate = parseDateOnlyToLocal(service.date)
     serviceDate.setHours(0, 0, 0, 0)
     
     if (!oldestDate || serviceDate < oldestDate) {
